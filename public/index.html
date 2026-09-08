@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReplyBot — AI-ответы на YouTube</title>
+  <style>
+    /* ===== ГЛОБАЛЬНЫЕ СТИЛИ ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0b0b0b;
+      color: #ffffff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== АНИМИРОВАННЫЙ ГРАДИЕНТНЫЙ ФОН ===== */
+    .bg-glow {
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 30% 40%, rgba(255, 0, 0, 0.08), transparent 60%),
+                  radial-gradient(circle at 70% 60%, rgba(255, 50, 50, 0.05), transparent 50%);
+      z-index: 0;
+      pointer-events: none;
+      animation: floatGlow 20s infinite alternate ease-in-out;
+    }
+
+    @keyframes floatGlow {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(2%, -2%) scale(1.05); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 30px 24px 60px;
+    }
+
+    /* ===== ШАПКА ===== */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 70px;
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #ff1a1a, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo span {
+      -webkit-text-fill-color: #ffffff;
+      background: none;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 28px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 15px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.25s ease;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #ccc;
+      border: 1px solid #333;
+    }
+    .btn-outline:hover {
+      border-color: #ff4d4d;
+      color: #fff;
+      background: rgba(255, 0, 0, 0.05);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff1a1a, #cc0000);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(255, 0, 0, 0.25);
+    }
+    .btn-primary:hover {
+      transform: scale(1.03);
+      box-shadow: 0 6px 30px rgba(255, 0, 0, 0.4);
+    }
+
+    .btn-primary .arrow {
+      display: inline-block;
+      transition: transform 0.2s;
+    }
+    .btn-primary:hover .arrow {
+      transform: translateX(4px);
+    }
+
+    /* ===== ГЕРОЙ ===== */
+    .hero {
+      display: flex;
+      align-items: center;
+      gap: 50px;
+      margin-bottom: 90px;
+    }
+
+    .hero-text {
+      flex: 1;
+    }
+
+    .hero-text .badge {
+      display: inline-block;
+      background: rgba(255, 0, 0, 0.12);
+      color: #ff6b6b;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 40px;
+      letter-spacing: 0.3px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(255, 0, 0, 0.15);
+    }
+
+    .hero-text h1 {
+      font-size: 52px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 22px;
+    }
+
+    .hero-text h1 .highlight {
+      background: linear-gradient(135deg, #ff1a1a, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-text p {
+      font-size: 18px;
+      color: #aaa;
+      line-height: 1.7;
+      max-width: 480px;
+      margin-bottom: 32px;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 40px;
+      margin-top: 30px;
+    }
+    .hero-stats .stat {
+      display: flex;
+      flex-direction: column;
+    }
+    .hero-stats .stat .num {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .hero-stats .stat .label {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .hero-image {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .hero-robot {
+      width: 280px;
+      height: 280px;
+      background: radial-gradient(circle at 30% 30%, #1a1a1a, #0f0f0f);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 100px;
+      border: 1px solid #222;
+      box-shadow: 0 0 80px rgba(255, 0, 0, 0.06);
+      transition: box-shadow 0.4s;
+      animation: pulseGlow 4s infinite alternate ease-in-out;
+    }
+    .hero-robot:hover {
+      box-shadow: 0 0 100px rgba(255, 0, 0, 0.12);
+    }
+
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 40px rgba(255, 0, 0, 0.04); }
+      100% { box-shadow: 0 0 100px rgba(255, 0, 0, 0.12); }
+    }
+
+    .hero-robot .sub {
+      font-size: 14px;
+      color: #555;
+      margin-top: 6px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== КАРТОЧКИ ===== */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+      margin-bottom: 80px;
+    }
+
+    .feature-card {
+      background: #121212;
+      border-radius: 20px;
+      padding: 32px 28px;
+      border: 1px solid #1e1e1e;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(4px);
+    }
+    .feature-card:hover {
+      border-color: #ff3333;
+      transform: translateY(-6px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .feature-card .icon {
+      font-size: 36px;
+      margin-bottom: 14px;
+      display: block;
+    }
+    .feature-card h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: -0.2px;
+    }
+    .feature-card p {
+      color: #888;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .feature-card .tag {
+      display: inline-block;
+      margin-top: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #ff4d4d;
+      background: rgba(255, 0, 0, 0.08);
+      padding: 4px 14px;
+      border-radius: 40px;
+      border: 1px solid rgba(255, 0, 0, 0.1);
+    }
+
+    /* ===== ЦЕНЫ ===== */
+    .pricing {
+      background: #111;
+      border-radius: 24px;
+      padding: 50px 40px;
+      text-align: center;
+      border: 1px solid #1e1e1e;
+      margin-bottom: 60px;
+      transition: border-color 0.3s;
+    }
+    .pricing:hover {
+      border-color: #ff1a1a33;
+    }
+
+    .pricing h2 {
+      font-size: 34px;
+      font-weight: 700;
+    }
+    .pricing .sub {
+      color: #888;
+      margin-top: 6px;
+      font-size: 16px;
+    }
+
+    .pricing .price-block {
+      margin: 24px 0 20px;
+    }
+    .pricing .price-block .big {
+      font-size: 54px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ff1a1a, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .pricing .price-block .period {
+      font-size: 18px;
+      color: #666;
+      font-weight: 400;
+    }
+
+    .pricing .btn {
+      margin-top: 8px;
+    }
+
+    /* ===== ФУТЕР ===== */
+    .footer {
+      text-align: center;
+      color: #444;
+      font-size: 14px;
+      border-top: 1px solid #181818;
+      padding-top: 32px;
+      margin-top: 20px;
+    }
+
+    /* ===== АДАПТИВ ===== */
+    @media (max-width: 820px) {
+      .hero {
+        flex-direction: column;
+        text-align: center;
+      }
+      .hero-text p {
+        max-width: 100%;
+      }
+      .hero-stats {
+        justify-content: center;
+      }
+      .hero-text h1 {
+        font-size: 36px;
+      }
+      .features {
+        grid-template-columns: 1fr;
+      }
+      .header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+      .header-actions {
+        justify-content: center;
+      }
+      .hero-robot {
+        width: 200px;
+        height: 200px;
+        font-size: 70px;
+      }
+      .pricing {
+        padding: 30px 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero-text h1 {
+        font-size: 28px;
+      }
+      .btn {
+        padding: 10px 20px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-glow"></div>
+
+  <div class="container">
+
+    <!-- ===== ШАПКА ===== -->
+    <div class="header">
+      <div class="logo">Reply<span>Bot</span></div>
+      <div class="header-actions">
+        <a href="/dashboard.html" class="btn btn-outline">Войти</a>
+        <a href="/auth/youtube" class="btn btn-primary">Подключить YouTube →</a>
+      </div>
+    </div>
+
+    <!-- ===== ГЕРОЙ ===== -->
+    <div class="hero">
+      <div class="hero-text">
+        <div class="badge">⚡ Новое поколение AI-ботов</div>
+        <h1>Отвечает на комментарии<br><span class="highlight">в твоём стиле</span></h1>
+        <p>
+          Бот читает субтитры видео, понимает контекст и даёт осмысленные ответы.
+          Работает 24/7, поднимает охваты и экономит часы твоего времени.
+        </p>
+        <a href="/auth/youtube" class="btn btn-primary">
+          Попробовать бесплатно <span class="arrow">→</span>
+        </a>
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="num">2 мин</span>
+            <span class="label">на подключение</span>
+          </div>
+          <div class="stat">
+            <span class="num">24/7</span>
+            <span class="label">работает автономно</span>
+          </div>
+          <div class="stat">
+            <span class="num">AI</span>
+            <span class="label">DeepSeek внутри</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-image">
+        <div class="hero-robot">
+          🤖
+          <span class="sub">умный ответ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ФИЧИ ===== -->
+    <div class="features">
+      <div class="feature-card">
+        <span class="icon">🧠</span>
+        <h3>Понимает видео</h3>
+        <p>Бот читает субтитры и отвечает по делу, а не просто «спасибо, друг».</p>
+        <span class="tag">с транскриптом</span>
+      </div>
+      <div class="feature-card">
+        <span class="icon">🎯</span>
+        <h3>Твой тон</h3>
+        <p>Дружелюбный, дерзкий, смешной или экспертный — выбирай стиль ответа.</p>
+        <span class="tag">гибкие настройки</span>
+      </div>
+      <div class="feature-card">
+        <span class="icon">📈</span>
+        <h3>Рост охватов</h3>
+        <p>YouTube любит активность. Бот создаёт живые обсуждения под твоими видео.</p>
+        <span class="tag">вовлечённость</span>
+      </div>
+    </div>
+
+    <!-- ===== ПРАЙС ===== -->
+    <div class="pricing">
+      <h2>Начни прямо сейчас</h2>
+      <p class="sub">Первый месяц — бесплатно. Без карты.</p>
+      <div class="price-block">
+        <span class="big">0 ₽</span>
+        <span class="period">/ первый месяц</span>
+      </div>
+      <a href="/auth/youtube" class="btn btn-primary">
+        Подключить YouTube →
+      </a>
+      <p style="margin-top: 16px; font-size: 14px; color: #555;">
+        Потом от 1 990 ₽/мес. Отключить можно в любой момент.
+      </p>
+    </div>
+
+    <!-- ===== ФУТЕР ===== -->
+    <div class="footer">
+      <p>© 2026 ReplyBot — AI-помощник для ютуберов</p>
+    </div>
+
+  </div>
+
+</body>
+</html>

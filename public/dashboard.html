@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReplyBot — Вход</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0b0b0b;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      max-width: 400px;
+      width: 100%;
+      padding: 30px 20px;
+    }
+    .card {
+      background: #121212;
+      border-radius: 20px;
+      padding: 40px 30px;
+      border: 1px solid #1e1e1e;
+    }
+    .card h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    .card .sub {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ff1a1a, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+    .logo span {
+      -webkit-text-fill-color: #fff;
+      background: none;
+    }
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid #2a2a2a;
+      background: #0d0d0d;
+      color: #fff;
+      font-size: 15px;
+      margin-bottom: 14px;
+      transition: border-color 0.3s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #ff1a1a;
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #ff1a1a, #cc0000);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      transform: scale(1.02);
+    }
+    .btn-outline {
+      background: transparent;
+      color: #aaa;
+      border: 1px solid #2a2a2a;
+      margin-top: 10px;
+    }
+    .btn-outline:hover {
+      border-color: #ff4d4d;
+      color: #fff;
+    }
+    .switch {
+      text-align: center;
+      color: #555;
+      font-size: 14px;
+      margin-top: 16px;
+    }
+    .switch a {
+      color: #ff4d4d;
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .switch a:hover {
+      text-decoration: underline;
+    }
+    .error {
+      color: #ff4d4d;
+      font-size: 14px;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .success {
+      color: #00c850;
+      font-size: 14px;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .hidden {
+      display: none !important;
+    }
+    #dashboardContent {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Форма входа -->
+    <div id="authForm" class="card">
+      <div class="logo">Reply<span>Bot</span></div>
+      <h1 id="formTitle">Вход</h1>
+      <p class="sub" id="formSub">Войди в свой аккаунт</p>
+
+      <div id="errorMsg" class="error"></div>
+      <div id="successMsg" class="success"></div>
+
+      <input type="email" id="emailInput" placeholder="Email">
+      <input type="password" id="passwordInput" placeholder="Пароль">
+
+      <button class="btn btn-primary" id="submitBtn" onclick="submitForm()">Войти</button>
+      <button class="btn btn-outline" onclick="toggleMode()" id="toggleBtn">Нет аккаунта? Зарегистрироваться</button>
+    </div>
+
+    <!-- Дашборд (после входа) -->
+    <div id="dashboardContent" class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div class="logo">Reply<span>Bot</span></div>
+        <button class="btn btn-outline" style="width: auto; padding: 8px 18px; font-size: 13px;" onclick="logout()">Выйти</button>
+      </div>
+      <h2>👋 Привет, <span id="userEmail">—</span></h2>
+      <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Твой бот работает и отвечает на комментарии.</p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+        <div style="background: #0d0d0d; padding: 16px; border-radius: 12px; border: 1px solid #1a1a1a;">
+          <div style="font-size: 24px; font-weight: 700; color: #ff4d4d;" id="statComments">0</div>
+          <div style="color: #555; font-size: 12px;">комментариев</div>
+        </div>
+        <div style="background: #0d0d0d; padding: 16px; border-radius: 12px; border: 1px solid #1a1a1a;">
+          <div style="font-size: 24px; font-weight: 700; color: #00c850;" id="statStatus">✅</div>
+          <div style="color: #555; font-size: 12px;">статус</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="color: #888; font-size: 13px; display: block; margin-bottom: 4px;">Тон ответа</label>
+        <select id="botTone" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #2a2a2a; background: #0d0d0d; color: #fff;">
+          <option value="дружелюбный">😊 Дружелюбный</option>
+          <option value="дерзкий">😏 Дерзкий</option>
+          <option value="смешной">😂 Смешной</option>
+          <option value="поддерживающий">💪 Поддерживающий</option>
+          <option value="экспертный">🧠 Экспертный</option>
+        </select>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveSettings()">💾 Сохранить настройки</button>
+      <button class="btn btn-outline" onclick="runNow()" style="margin-top: 8px;">▶️ Проверить комментарии сейчас</button>
+
+      <div style="margin-top: 16px; border-top: 1px solid #1a1a1a; padding-top: 16px;">
+        <a href="/auth/youtube" class="btn btn-primary" style="text-align: center; text-decoration: none; display: block;">🔗 Подключить YouTube</a>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let isLogin = true;
+
+    function toggleMode() {
+      isLogin = !isLogin;
+      document.getElementById('formTitle').textContent = isLogin ? 'Вход' : 'Регистрация';
+      document.getElementById('formSub').textContent = isLogin ? 'Войди в свой аккаунт' : 'Создай новый аккаунт';
+      document.getElementById('submitBtn').textContent = isLogin ? 'Войти' : 'Зарегистрироваться';
+      document.getElementById('toggleBtn').textContent = isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти';
+      document.getElementById('errorMsg').style.display = 'none';
+      document.getElementById('successMsg').style.display = 'none';
+    }
+
+    async function submitForm() {
+      const email = document.getElementById('emailInput').value;
+      const password = document.getElementById('passwordInput').value;
+      const errorEl = document.getElementById('errorMsg');
+      const successEl = document.getElementById('successMsg');
+
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+
+      if (!email || !password) {
+        errorEl.textContent = 'Заполни все поля';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      const endpoint = isLogin ? '/api/login' : '/api/register';
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorEl.textContent = data.error || 'Ошибка';
+          errorEl.style.display = 'block';
+          return;
+        }
+
+        successEl.textContent = isLogin ? '✅ Вход выполнен!' : '✅ Регистрация успешна!';
+        successEl.style.display = 'block';
+
+        if (isLogin) {
+          // Показываем дашборд
+          document.getElementById('authForm').style.display = 'none';
+          document.getElementById('dashboardContent').style.display = 'block';
+          document.getElementById('userEmail').textContent = data.user?.email || email;
+          if (data.settings?.tone) {
+            document.getElementById('botTone').value = data.settings.tone;
+          }
+          loadStats();
+        } else {
+          // После регистрации переключаем на вход
+          setTimeout(() => {
+            isLogin = true;
+            toggleMode();
+            successEl.textContent = 'Теперь войди в аккаунт';
+            successEl.style.display = 'block';
+          }, 1000);
+        }
+
+      } catch (e) {
+        errorEl.textContent = 'Ошибка соединения с сервером';
+        errorEl.style.display = 'block';
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        document.getElementById('statComments').textContent = data.comments || 0;
+        document.getElementById('statStatus').textContent = data.youtube ? '✅ подключён' : '❌ не подключён';
+      } catch (e) {}
+    }
+
+    async function saveSettings() {
+      const tone = document.getElementById('botTone').value;
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tone })
+        });
+        alert('✅ Настройки сохранены!');
+      } catch (e) {
+        alert('❌ Ошибка сохранения');
+      }
+    }
+
+    async function runNow() {
+      try {
+        const res = await fetch('/api/test-reply');
+        const data = await res.json();
+        alert(data.status || data.error || '✅ Проверка выполнена');
+        loadStats();
+      } catch (e) {
+        alert('❌ Ошибка');
+      }
+    }
+
+    function logout() {
+      document.getElementById('authForm').style.display = 'block';
+      document.getElementById('dashboardContent').style.display = 'none';
+      document.getElementById('emailInput').value = '';
+      document.getElementById('passwordInput').value = '';
+    }
+
+    // Проверяем, есть ли сессия (пока просто показываем форму)
+    // В будущем добавим JWT
+  </script>
+</body>
+</html>
