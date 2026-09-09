@@ -230,6 +230,69 @@
       background: #ff4d4d;
       border-radius: 4px;
     }
+    #competitorList {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    #competitorList::-webkit-scrollbar {
+      width: 4px;
+    }
+    #competitorList::-webkit-scrollbar-track {
+      background: #1a1a1a;
+    }
+    #competitorList::-webkit-scrollbar-thumb {
+      background: #ff4d4d;
+      border-radius: 4px;
+    }
+    .competitor-card {
+      background: #0d0d0d;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #1a1a1a;
+      margin-bottom: 8px;
+    }
+    .competitor-card .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .competitor-card .title-row .title {
+      font-weight: 600;
+      color: #fff;
+      font-size: 14px;
+    }
+    .competitor-card .title-row .channel {
+      color: #555;
+      font-size: 12px;
+    }
+    .competitor-card .comments {
+      margin-top: 6px;
+    }
+    .competitor-card .comments .comment {
+      color: #888;
+      font-size: 13px;
+      padding: 2px 0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    .competitor-card .comments .comment:last-child { border-bottom: none; }
+    .competitor-card .video-link {
+      margin-top: 4px;
+    }
+    .competitor-card .video-link a {
+      color: #ff4d4d;
+      font-size: 12px;
+      text-decoration: none;
+    }
+    .competitor-card .video-link a:hover { text-decoration: underline; }
+    .trend-tag {
+      background: #1a1a1a;
+      padding: 4px 12px;
+      border-radius: 40px;
+      border: 1px solid #ff4d4d44;
+      font-size: 13px;
+      color: #ff6b6b;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
@@ -324,7 +387,6 @@
         <button class="btn btn-gold" onclick="activateSubscription()">✅ Активировать подписку</button>
         <p style="color: #555; font-size: 11px; text-align: center; margin-top: 6px;">Активирует подписку без проверки перевода</p>
 
-        <!-- ===== УПРАВЛЕНИЕ ОТЗЫВАМИ ===== -->
         <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2a2a;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <span style="color: #ffaa00; font-weight: 700;">💬 Управление отзывами</span>
@@ -333,6 +395,22 @@
           <div id="adminReviewsList">
             <p style="color: #555; font-size: 13px;">Загрузка...</p>
           </div>
+        </div>
+      </div>
+
+      <!-- ===== ПАРСИНГ КОНКУРЕНТОВ ===== -->
+      <div style="margin: 12px 0 6px;">
+        <label style="color: #888; font-size: 13px; font-weight: 600;">🔍 Парсинг конкурентов</label>
+      </div>
+      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+        <input type="text" id="competitorQuery" placeholder="Введи запрос (например: влог путешествия)" style="flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid #2a2a2a; background: #0d0d0d; color: #fff; font-size: 14px;">
+        <button class="btn btn-primary" onclick="parseCompetitors()" id="parseBtn" style="width: auto; padding: 10px 20px; font-size: 14px;">🔍 Найти</button>
+      </div>
+      <div id="competitorResults" style="display: none; margin-top: 10px;">
+        <div id="competitorTrends" style="background: #0d0d0d; padding: 10px 14px; border-radius: 10px; border: 1px solid #1a1a1a; margin-bottom: 10px;"></div>
+        <div id="competitorList"></div>
+        <div style="margin-top: 8px; text-align: center;">
+          <button class="btn btn-outline" onclick="clearCompetitorResults()" style="width: auto; padding: 6px 16px; font-size: 12px;">✕ Очистить</button>
         </div>
       </div>
 
@@ -694,7 +772,6 @@
       } catch (e) { alert('❌ Ошибка: ' + e.message); }
     }
 
-    // ===== УПРАВЛЕНИЕ ОТЗЫВАМИ (АДМИН) =====
     async function loadAdminReviews() {
       const token = getToken();
       if (!token) return;
@@ -774,6 +851,79 @@
       } catch (e) {
         alert('❌ Ошибка');
       }
+    }
+
+    // ===== ПАРСИНГ КОНКУРЕНТОВ =====
+    async function parseCompetitors() {
+      const query = document.getElementById('competitorQuery').value.trim();
+      if (!query) {
+        alert('Введи запрос для поиска');
+        return;
+      }
+
+      const btn = document.getElementById('parseBtn');
+      const container = document.getElementById('competitorResults');
+      const list = document.getElementById('competitorList');
+      const trends = document.getElementById('competitorTrends');
+
+      btn.textContent = '⏳ Загрузка...';
+      btn.disabled = true;
+      container.style.display = 'block';
+      list.innerHTML = 'Анализирую комментарии конкурентов...';
+      trends.innerHTML = '';
+
+      try {
+        const res = await fetch('/api/competitors?query=' + encodeURIComponent(query));
+        const data = await res.json();
+
+        if (data.error) {
+          list.innerHTML = '❌ ' + data.error;
+          return;
+        }
+
+        if (data.trends && data.trends.length > 0) {
+          trends.innerHTML = `
+            <strong style="color: #fff; font-size: 14px;">📊 Тренды (${data.totalComments} комментариев):</strong>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+              ${data.trends.map(t => `<span class="trend-tag">${t.word} (${t.count})</span>`).join('')}
+            </div>
+          `;
+        }
+
+        if (!data.results || data.results.length === 0) {
+          list.innerHTML = '<p style="color: #555;">Ничего не найдено</p>';
+          return;
+        }
+
+        list.innerHTML = data.results.map(r => `
+          <div class="competitor-card">
+            <div class="title-row">
+              <span class="title">📹 ${r.title}</span>
+              <span class="channel">${r.channelName}</span>
+            </div>
+            <div class="comments">
+              ${r.comments.map(c => `<div class="comment">💬 "${c}"</div>`).join('')}
+              ${r.comments.length === 0 ? '<div style="color: #555; font-size: 12px;">Нет комментариев</div>' : ''}
+            </div>
+            <div class="video-link">
+              <a href="https://youtu.be/${r.videoId}" target="_blank">Открыть видео →</a>
+            </div>
+          </div>
+        `).join('');
+
+      } catch (e) {
+        list.innerHTML = '❌ Ошибка: ' + e.message;
+      }
+
+      btn.textContent = '🔍 Найти';
+      btn.disabled = false;
+    }
+
+    function clearCompetitorResults() {
+      document.getElementById('competitorResults').style.display = 'none';
+      document.getElementById('competitorList').innerHTML = '';
+      document.getElementById('competitorTrends').innerHTML = '';
+      document.getElementById('competitorQuery').value = '';
     }
 
     function logout() {
