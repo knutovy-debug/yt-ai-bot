@@ -1,18 +1,15 @@
 {
-  "users": [
-    {
-      "id": "1788869740417",
-      "email": "knutovy@gmail.com",
-      "password": "$2b$10$I5arMz9BbK0RsMw1sbqQJ.nk3R2DqSpdRWulHcavyf1LQu7xPbInq",
-      "created_at": "2026-09-08T12:15:40.417Z"
-    }
-  ],
-  "settings": [
-    {
-      "user_id": "1788869740417",
-      "tone": "дружелюбный",
-      "max_length": 30,
-      "check_interval": 5
-    }
-  ]
+  "users": [],
+  "settings": [],
+  "lastCheck": {},
+  "transcripts": {},
+  "weekReplies": 0,
+  "videosProcessed": 0,
+  "moderatedCount": 0,
+  "replyLog": [],
+  "pinnedComments": [],
+  "videoIdeas": [],
+  "competitors": [],
+  "subscriptions": [],
+  "payments": []
 }
