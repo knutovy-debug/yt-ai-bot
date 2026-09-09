@@ -5,6 +5,7 @@ const axios = require('axios');
 const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
+const jwt = require('jsonwebtoken');
 
 const OpenAI = require('openai');
 
@@ -12,6 +13,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+
+// ============ СЕКРЕТ ДЛЯ JWT ============
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey123';
 
 // ============ JSON-БАЗА ДАННЫХ ============
 const DB_FILE = path.join(__dirname, 'db.json');
@@ -158,7 +162,7 @@ app.post('/api/register', async (req, res) => {
   res.json({ success: true, user: { id: newUser.id, email: newUser.email } });
 });
 
-// ============ ВХОД ============
+// ============ ВХОД С JWT ============
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email и пароль обязательны' });
@@ -169,7 +173,44 @@ app.post('/api/login', async (req, res) => {
   if (!valid) return res.status(401).json({ error: 'Неверный email или пароль' });
   const settings = db.settings.find(s => s.user_id === user.id) || { tone: 'дружелюбный', max_length: 30, check_interval: 5, mode: 'all', manualVideoId: '' };
   const sub = db.subscriptions.find(s => s.user_id === user.id) || { plan: 'free', commentsUsed: 0 };
-  res.json({ success: true, user: { id: user.id, email: user.email }, settings, subscription: sub });
+  
+  // Генерируем JWT-токен
+  const token = jwt.sign(
+    { userId: user.id, email: user.email },
+    JWT_SECRET,
+    { expiresIn: '30d' } // токен живёт 30 дней
+  );
+  
+  res.json({
+    success: true,
+    token: token,
+    user: { id: user.id, email: user.email },
+    settings,
+    subscription: sub
+  });
+});
+
+// ============ ПРОВЕРКА ТОКЕНА ============
+app.get('/api/me', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: 'Нет токена' });
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const db = readDB();
+    const user = db.users.find(u => u.id === decoded.userId);
+    if (!user) return res.status(401).json({ error: 'Пользователь не найден' });
+    const settings = db.settings.find(s => s.user_id === user.id) || { tone: 'дружелюбный', max_length: 30, check_interval: 5, mode: 'all', manualVideoId: '' };
+    const sub = db.subscriptions.find(s => s.user_id === user.id) || { plan: 'free', commentsUsed: 0 };
+    res.json({
+      success: true,
+      user: { id: user.id, email: user.email },
+      settings,
+      subscription: sub
+    });
+  } catch (error) {
+    res.status(401).json({ error: 'Невалидный токен' });
+  }
 });
 
 // ============ СТАТУС ============
