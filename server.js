@@ -22,39 +22,61 @@ function readDB() {
   try {
     if (!fs.existsSync(DB_FILE)) {
       fs.writeFileSync(DB_FILE, JSON.stringify({
-        users: [], settings: [], lastCheck: {}, transcripts: {},
-        weekReplies: 0, videosProcessed: 0, moderatedCount: 0,
-        replyLog: [], pinnedComments: [], videoIdeas: [], competitors: [],
-        subscriptions: [], payments: [], processedCommentIds: [],
-        channels: [] // <-- НОВОЕ: список каналов пользователей
+        users: [],
+        settings: [],
+        lastCheck: {},
+        transcripts: {},
+        weekReplies: 0,
+        videosProcessed: 0,
+        moderatedCount: 0,
+        replyLog: [],
+        pinnedComments: [],
+        videoIdeas: [],
+        competitors: [],
+        subscriptions: [],
+        payments: [],
+        processedCommentIds: [],
+        channels: []
       }));
     }
     return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
   } catch {
     return {
-      users: [], settings: [], lastCheck: {}, transcripts: {},
-      weekReplies: 0, videosProcessed: 0, moderatedCount: 0,
-      replyLog: [], pinnedComments: [], videoIdeas: [], competitors: [],
-      subscriptions: [], payments: [], processedCommentIds: [],
+      users: [],
+      settings: [],
+      lastCheck: {},
+      transcripts: {},
+      weekReplies: 0,
+      videosProcessed: 0,
+      moderatedCount: 0,
+      replyLog: [],
+      pinnedComments: [],
+      videoIdeas: [],
+      competitors: [],
+      subscriptions: [],
+      payments: [],
+      processedCommentIds: [],
       channels: []
     };
   }
 }
-function writeDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2)); }
 
+function writeDB(data) {
+  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+}
+
+// ============ ТАРИФЫ ============
 const PLANS = {
   free: { name: 'Бесплатный', price: 0, commentsPerMonth: 50, channels: 1 },
   blogger: { name: 'Блогер', price: 1990, commentsPerMonth: 500, channels: 1 },
   pro: { name: 'Профи', price: 4990, commentsPerMonth: 9999, channels: 3 }
 };
 
+// ============ ПОДКЛЮЧЕНИЯ ============
 const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY,
   baseURL: 'https://api.deepseek.com/v1'
 });
-
-// ============ ТЕКУЩИЙ АКТИВНЫЙ КАНАЛ (для OAuth) ============
-let currentOAuthUserId = null;
 
 // ============ ФИЛЬТР ТОКСИЧНЫХ КОММЕНТАРИЕВ ============
 const BAD_WORDS = ['хуй', 'пизда', 'бля', 'еба', 'залупа', 'мудак', 'пидор', 'гандон', 'шлюха', 'сучка', 'ублюдок', 'тварь', 'дебил', 'идиот', 'кретин', 'долбоёб', 'нахуй', 'похуй', 'ебать', 'блядь', 'fuck', 'shit', 'asshole', 'bitch', 'cunt', 'dick', 'pussy'];
@@ -173,7 +195,7 @@ app.get('/api/me', async (req, res) => {
     if (!user) return res.status(401).json({ error: 'Пользователь не найден' });
     const settings = db.settings.find(s => s.user_id === user.id) || { tone: 'дружелюбный', max_length: 30, check_interval: 5, mode: 'all', manualVideoId: '' };
     const sub = db.subscriptions.find(s => s.user_id === user.id) || { plan: 'free', commentsUsed: 0 };
-    const channels = db.channels.filter(c => c.user_id === user.id) || [];
+    const channels = (db.channels || []).filter(c => c.user_id === user.id);
     res.json({
       success: true,
       user: { id: user.id, email: user.email },
@@ -191,11 +213,11 @@ app.get('/api/status', (req, res) => {
   const db = readDB();
   const sub = db.subscriptions[0] || { plan: 'free', commentsUsed: 0 };
   const plan = PLANS[sub.plan] || PLANS.free;
-  const channels = (db.channels || []).filter(c => c.user_id === user.id);
+  const channelCount = (db.channels || []).filter(c => c.user_id === db.users[0]?.id).length || 0;
   res.json({
     status: 'ok',
     youtube: channelCount > 0 ? 'подключён' : 'не подключён',
-    comments: Object.keys(db.lastCheck).length,
+    comments: Object.keys(db.lastCheck || {}).length,
     weekReplies: db.weekReplies || 0,
     videosProcessed: db.videosProcessed || 0,
     moderatedCount: db.moderatedCount || 0,
@@ -209,12 +231,11 @@ app.get('/api/status', (req, res) => {
 });
 
 // ============ YOUTUBE OAuth ============
+let currentOAuthUserId = null;
+
 app.get('/auth/youtube', (req, res) => {
-  // Сохраняем userId в сессии (через параметр)
   const userId = req.query.userId;
-  if (userId) {
-    currentOAuthUserId = userId;
-  }
+  if (userId) currentOAuthUserId = userId;
   const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
     new URLSearchParams({
       client_id: process.env.GOOGLE_CLIENT_ID,
@@ -254,10 +275,8 @@ app.get('/auth/youtube/callback', async (req, res) => {
 
     const db = readDB();
 
-    // Проверяем, не подключён ли уже этот канал
-    const existingChannel = db.channels.find(c => c.channel_id === channelId);
+    const existingChannel = (db.channels || []).find(c => c.channel_id === channelId);
     if (existingChannel) {
-      // Обновляем токены
       existingChannel.access_token = accessToken;
       existingChannel.refresh_token = refreshToken;
       existingChannel.token_expires_at = new Date(Date.now() + 3600 * 1000).toISOString();
@@ -269,14 +288,12 @@ app.get('/auth/youtube/callback', async (req, res) => {
       `);
     }
 
-    // Сохраняем канал для пользователя
     const userId = currentOAuthUserId || (db.users[0]?.id);
     if (!userId) {
       return res.send('❌ Ошибка: пользователь не найден. Сначала зарегистрируйся.');
     }
 
-    // Проверяем лимит каналов
-    const userChannels = db.channels.filter(c => c.user_id === userId);
+    const userChannels = (db.channels || []).filter(c => c.user_id === userId);
     const userSub = db.subscriptions.find(s => s.user_id === userId) || { plan: 'free' };
     const maxChannels = PLANS[userSub.plan]?.channels || 1;
 
@@ -288,6 +305,7 @@ app.get('/auth/youtube/callback', async (req, res) => {
       `);
     }
 
+    if (!db.channels) db.channels = [];
     db.channels.push({
       user_id: userId,
       channel_id: channelId,
@@ -329,13 +347,45 @@ app.get('/auth/youtube/callback', async (req, res) => {
   }
 });
 
-// ============ ОСНОВНАЯ ФУНКЦИЯ (проверяет ВСЕ каналы) ============
+// ============ API КАНАЛОВ ============
+app.get('/api/channels', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: 'Нет токена' });
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const db = readDB();
+    const channels = (db.channels || []).filter(c => c.user_id === decoded.userId);
+    res.json({ channels });
+  } catch (error) {
+    res.status(401).json({ error: 'Невалидный токен' });
+  }
+});
+
+app.delete('/api/channels/:channelId', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: 'Нет токена' });
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const db = readDB();
+    if (!db.channels) db.channels = [];
+    const channelIndex = db.channels.findIndex(c => c.channel_id === req.params.channelId && c.user_id === decoded.userId);
+    if (channelIndex === -1) return res.status(404).json({ error: 'Канал не найден' });
+    db.channels.splice(channelIndex, 1);
+    writeDB(db);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(401).json({ error: 'Невалидный токен' });
+  }
+});
+
+// ============ ОСНОВНАЯ ФУНКЦИЯ ============
 async function processComments() {
   const db = readDB();
   const channels = db.channels || [];
   if (channels.length === 0) return;
 
-  // Получаем настройки пользователя (первые в db)
   const userSettings = db.settings[0] || { tone: 'дружелюбный', mode: 'all', manualVideoId: '' };
   const userSub = db.subscriptions[0] || { plan: 'free', commentsUsed: 0 };
   const plan = PLANS[userSub.plan] || PLANS.free;
@@ -355,7 +405,6 @@ async function processComments() {
     const channelId = channel.channel_id;
 
     try {
-      // Получаем видео с канала
       let videoIds = [];
       if (userSettings.mode === 'manual' && userSettings.manualVideoId) {
         videoIds = [userSettings.manualVideoId];
@@ -422,10 +471,29 @@ async function processComments() {
   }
 }
 
-// ============ API ============
+// ============ ОСТАЛЬНЫЕ API ============
 app.get('/api/test-reply', async (req, res) => { await processComments(); res.json({ status: '✅ Проверка выполнена' }); });
 app.get('/api/get-ideas', async (req, res) => { const db = readDB(); res.json({ ideas: db.videoIdeas || [] }); });
 app.get('/api/get-competitors', async (req, res) => { const db = readDB(); res.json({ competitors: db.competitors || [] }); });
+app.get('/api/video-ideas', async (req, res) => {
+  const db = readDB();
+  const allComments = db.replyLog || [];
+  if (allComments.length === 0) return res.json({ error: 'Нет комментариев' });
+  const commentsText = allComments.slice(0, 20).map(c => c.comment).join('\n');
+  const prompt = `Проанализируй комментарии и предложи 5 идей для видео.\n${commentsText}`;
+  try {
+    const response = await deepseek.chat.completions.create({
+      model: 'deepseek-chat',
+      messages: [{ role: 'system', content: prompt }, { role: 'user', content: 'Идеи' }],
+      max_tokens: 500,
+      temperature: 0.9
+    });
+    const ideas = response.choices[0].message.content.trim().split('\n').filter(line => line.trim());
+    db.videoIdeas = ideas;
+    writeDB(db);
+    res.json({ ideas });
+  } catch (error) { res.json({ error: error.message }); }
+});
 app.get('/api/test-drive', async (req, res) => {
   const { videoId } = req.query;
   if (!videoId) return res.json({ error: 'Укажи videoId' });
@@ -440,7 +508,6 @@ app.get('/api/test-drive', async (req, res) => {
   } catch (error) { res.json({ error: error.message }); }
 });
 
-// ============ СОЗДАНИЕ ПЛАТЕЖА ============
 app.post('/api/create-payment', async (req, res) => {
   const { userId, plan } = req.body;
   if (!userId || !plan) return res.status(400).json({ error: 'Не указан пользователь или тариф' });
@@ -450,6 +517,7 @@ app.post('/api/create-payment', async (req, res) => {
   const planData = PLANS[plan];
   if (!planData) return res.status(400).json({ error: 'Неверный тариф' });
   const paymentId = Date.now().toString() + userId.slice(-4);
+  if (!db.payments) db.payments = [];
   db.payments.push({ id: paymentId, userId, email: user.email, plan, amount: planData.price, status: 'pending', created_at: new Date().toISOString() });
   writeDB(db);
   res.json({ paymentId, amount: planData.price, cardNumber: process.env.CARD_NUMBER || '2202 2003 1234 5678', cardHolder: process.env.CARD_HOLDER || 'IVAN IVANOV' });
@@ -459,6 +527,7 @@ app.post('/api/confirm-payment', async (req, res) => {
   const { userId, paymentId } = req.body;
   if (!userId || !paymentId) return res.status(400).json({ error: 'Укажи userId и paymentId' });
   const db = readDB();
+  if (!db.payments) db.payments = [];
   const payment = db.payments.find(p => p.id === paymentId && p.userId === userId);
   if (!payment) return res.status(404).json({ error: 'Платёж не найден' });
   if (payment.status === 'paid') return res.json({ success: true, message: 'Подписка уже активна' });
@@ -474,6 +543,7 @@ app.post('/api/admin-activate', async (req, res) => {
   const db = readDB();
   const user = db.users.find(u => u.email === email);
   if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+  if (!db.subscriptions) db.subscriptions = [];
   const existingSub = db.subscriptions.find(s => s.user_id === user.id);
   if (existingSub) {
     existingSub.plan = plan;
@@ -486,38 +556,6 @@ app.post('/api/admin-activate', async (req, res) => {
   writeDB(db);
   await sendTelegram(`✅ Админ активировал тариф "${PLANS[plan].name}" для ${email}`);
   res.json({ success: true, message: `✅ Подписка "${PLANS[plan].name}" активирована для ${email}` });
-});
-
-// ============ API КАНАЛОВ ============
-app.get('/api/channels', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: 'Нет токена' });
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const db = readDB();
-    const channels = db.channels.filter(c => c.user_id === decoded.userId);
-    res.json({ channels });
-  } catch (error) {
-    res.status(401).json({ error: 'Невалидный токен' });
-  }
-});
-
-app.delete('/api/channels/:channelId', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: 'Нет токена' });
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const db = readDB();
-    const channelIndex = db.channels.findIndex(c => c.channel_id === req.params.channelId && c.user_id === decoded.userId);
-    if (channelIndex === -1) return res.status(404).json({ error: 'Канал не найден' });
-    db.channels.splice(channelIndex, 1);
-    writeDB(db);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(401).json({ error: 'Невалидный токен' });
-  }
 });
 
 app.post('/api/settings', async (req, res) => {
@@ -539,6 +577,4 @@ setInterval(() => { processComments(); }, 5 * 60 * 1000);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Сервер на http://localhost:${PORT}`);
-  console.log(`📝 Тон ответа: ${process.env.BOT_TONE || 'дружелюбный'}`);
-  console.log(`📌 Режим: несколько каналов (до 3)`);
 });
