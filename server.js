@@ -21,21 +21,43 @@ function readDB() {
   try {
     if (!fs.existsSync(DB_FILE)) {
       fs.writeFileSync(DB_FILE, JSON.stringify({
-        users: [], settings: [], lastCheck: {}, transcripts: {},
-        weekReplies: 0, videosProcessed: 0, moderatedCount: 0,
-        replyLog: [], pinnedComments: [], videoIdeas: [], competitors: [],
-        subscriptions: [], payments: [], processedCommentIds: [],
-        channels: [], reviews: [], competitorAnalysis: []
+        users: [],
+        settings: [],
+        lastCheck: {},
+        transcripts: {},
+        weekReplies: 0,
+        videosProcessed: 0,
+        moderatedCount: 0,
+        replyLog: [],
+        pinnedComments: [],
+        videoIdeas: [],
+        competitors: [],
+        subscriptions: [],
+        payments: [],
+        processedCommentIds: [],
+        channels: [],
+        reviews: []
       }));
     }
     return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
   } catch {
     return {
-      users: [], settings: [], lastCheck: {}, transcripts: {},
-      weekReplies: 0, videosProcessed: 0, moderatedCount: 0,
-      replyLog: [], pinnedComments: [], videoIdeas: [], competitors: [],
-      subscriptions: [], payments: [], processedCommentIds: [],
-      channels: [], reviews: [], competitorAnalysis: []
+      users: [],
+      settings: [],
+      lastCheck: {},
+      transcripts: {},
+      weekReplies: 0,
+      videosProcessed: 0,
+      moderatedCount: 0,
+      replyLog: [],
+      pinnedComments: [],
+      videoIdeas: [],
+      competitors: [],
+      subscriptions: [],
+      payments: [],
+      processedCommentIds: [],
+      channels: [],
+      reviews: []
     };
   }
 }
@@ -423,71 +445,6 @@ app.delete('/api/admin/review/:reviewId', async (req, res) => {
   } catch (error) {
     res.status(401).json({ error: 'Невалидный токен' });
   }
-});
-
-// ============ ПАРСИНГ КОНКУРЕНТОВ ============
-app.get('/api/competitors', async (req, res) => {
-  const { query } = req.query;
-  if (!query) return res.json({ error: 'Укажи запрос' });
-  try {
-    const searchRes = await axios.get('https://www.googleapis.com/youtube/v3/search', {
-      params: { part: 'snippet', q: query, maxResults: 10, type: 'video', key: process.env.YOUTUBE_API_KEY }
-    });
-    const db = readDB();
-    const results = [];
-    const allComments = [];
-    
-    for (const item of searchRes.data.items) {
-      const videoId = item.id.videoId;
-      const commentsRes = await axios.get('https://www.googleapis.com/youtube/v3/commentThreads', {
-        params: { part: 'snippet', videoId, maxResults: 5, key: process.env.YOUTUBE_API_KEY }
-      });
-      const comments = commentsRes.data.items?.map(c => c.snippet.topLevelComment.snippet.textDisplay) || [];
-      allComments.push(...comments);
-      results.push({
-        title: item.snippet.title,
-        videoId: videoId,
-        channelName: item.snippet.channelTitle,
-        comments: comments.slice(0, 5)
-      });
-    }
-
-    const wordCount = {};
-    const stopWords = ['это', 'все', 'как', 'на', 'и', 'с', 'по', 'что', 'то', 'для', 'не', 'да', 'нет', 'очень', 'так', 'вот', 'там', 'тут', 'когда', 'где', 'почему', 'зачем', 'просто', 'уже', 'еще', 'можно', 'нужно', 'будет', 'было', 'стало', 'сейчас', 'тогда', 'сегодня', 'завтра', 'вчера', 'какой', 'какая', 'какое', 'какие'];
-    
-    for (const comment of allComments) {
-      const words = comment.toLowerCase().replace(/[^а-яa-z\s]/g, '').split(/\s+/);
-      for (const word of words) {
-        if (word.length > 2 && !stopWords.includes(word)) {
-          wordCount[word] = (wordCount[word] || 0) + 1;
-        }
-      }
-    }
-    
-    const trends = Object.entries(wordCount)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([word, count]) => ({ word, count }));
-
-    if (!db.competitorAnalysis) db.competitorAnalysis = [];
-    db.competitorAnalysis.push({
-      query,
-      timestamp: new Date().toISOString(),
-      results,
-      trends,
-      totalComments: allComments.length
-    });
-    if (db.competitorAnalysis.length > 50) db.competitorAnalysis.shift();
-    writeDB(db);
-
-    res.json({ results, trends, totalComments: allComments.length });
-
-  } catch (error) { res.json({ error: error.message }); }
-});
-
-app.get('/api/competitor-history', async (req, res) => {
-  const db = readDB();
-  res.json({ history: db.competitorAnalysis || [] });
 });
 
 // ============ ОСТАЛЬНЫЕ API ============
