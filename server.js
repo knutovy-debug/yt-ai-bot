@@ -17,7 +17,6 @@ app.use(express.static('public'));
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey123';
 const DB_FILE = path.join(__dirname, 'db.json');
 
-// ============ БАЗА ДАННЫХ ============
 function readDB() {
   try {
     if (!fs.existsSync(DB_FILE)) {
@@ -37,7 +36,8 @@ function readDB() {
         payments: [],
         processedCommentIds: [],
         channels: [],
-        reviews: []
+        reviews: [],
+        competitorAnalysis: []
       }));
     }
     return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
@@ -58,7 +58,8 @@ function readDB() {
       payments: [],
       processedCommentIds: [],
       channels: [],
-      reviews: []
+      reviews: [],
+      competitorAnalysis: []
     };
   }
 }
@@ -67,24 +68,20 @@ function writeDB(data) {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
-// ============ ТАРИФЫ ============
 const PLANS = {
   free: { name: 'Бесплатный', price: 0, commentsPerMonth: 50, channels: 1 },
   blogger: { name: 'Блогер', price: 1990, commentsPerMonth: 500, channels: 1 },
   pro: { name: 'Профи', price: 4990, commentsPerMonth: 9999, channels: 3 }
 };
 
-// ============ ПОДКЛЮЧЕНИЯ ============
 const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY,
   baseURL: 'https://api.deepseek.com/v1'
 });
 
-// ============ ФИЛЬТР ТОКСИЧНЫХ КОММЕНТАРИЕВ ============
 const BAD_WORDS = ['хуй', 'пизда', 'бля', 'еба', 'залупа', 'мудак', 'пидор', 'гандон', 'шлюха', 'сучка', 'ублюдок', 'тварь', 'дебил', 'идиот', 'кретин', 'долбоёб', 'нахуй', 'похуй', 'ебать', 'блядь', 'fuck', 'shit', 'asshole', 'bitch', 'cunt', 'dick', 'pussy'];
 function isToxic(text) { const lower = text.toLowerCase(); for (const word of BAD_WORDS) { if (lower.includes(word)) return true; } return false; }
 
-// ============ TELEGRAM ============
 async function sendTelegram(message) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -98,7 +95,6 @@ async function sendTelegram(message) {
   } catch (e) { console.log('Telegram error:', e.message); }
 }
 
-// ============ ПОЛУЧИТЬ ТРАНСКРИПТ ============
 async function getTranscript(videoId, accessToken) {
   const apiKey = process.env.YOUTUBE_API_KEY;
   try {
@@ -128,7 +124,6 @@ async function getTranscript(videoId, accessToken) {
   } catch (error) { return null; }
 }
 
-// ============ ГЕНЕРАЦИЯ ОТВЕТА ============
 async function generateReply(commentText, transcript, channelName, tone) {
   let context = '';
   if (transcript && transcript.length > 50) {
@@ -149,7 +144,6 @@ async function generateReply(commentText, transcript, channelName, tone) {
   return response.choices[0].message.content.trim();
 }
 
-// ============ РЕГИСТРАЦИЯ ============
 app.post('/api/register', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email и пароль обязательны' });
@@ -164,7 +158,6 @@ app.post('/api/register', async (req, res) => {
   res.json({ success: true, user: { id: newUser.id, email: newUser.email } });
 });
 
-// ============ ВХОД ============
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email и пароль обязательны' });
@@ -185,7 +178,6 @@ app.post('/api/login', async (req, res) => {
   });
 });
 
-// ============ ПРОВЕРКА ТОКЕНА ============
 app.get('/api/me', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ error: 'Нет токена' });
@@ -210,7 +202,6 @@ app.get('/api/me', async (req, res) => {
   }
 });
 
-// ============ СТАТУС ============
 app.get('/api/status', (req, res) => {
   const db = readDB();
   const sub = db.subscriptions[0] || { plan: 'free', commentsUsed: 0 };
@@ -232,7 +223,6 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// ============ YOUTUBE OAuth ============
 let currentOAuthUserId = null;
 
 app.get('/auth/youtube', (req, res) => {
@@ -349,7 +339,6 @@ app.get('/auth/youtube/callback', async (req, res) => {
   }
 });
 
-// ============ API КАНАЛОВ ============
 app.get('/api/channels', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ error: 'Нет токена' });
@@ -382,7 +371,6 @@ app.delete('/api/channels/:channelId', async (req, res) => {
   }
 });
 
-// ============ ОТЗЫВЫ ============
 app.get('/api/reviews', (req, res) => {
   const db = readDB();
   if (!db.reviews) db.reviews = [];
@@ -410,7 +398,6 @@ app.post('/api/reviews', async (req, res) => {
   res.json({ success: true, message: 'Спасибо за отзыв! Он появится после проверки.' });
 });
 
-// ===== АДМИН: ПОЛУЧИТЬ ВСЕ ОТЗЫВЫ =====
 app.get('/api/admin/reviews', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ error: 'Нет токена' });
@@ -425,7 +412,6 @@ app.get('/api/admin/reviews', async (req, res) => {
   }
 });
 
-// ===== АДМИН: ОДОБРИТЬ ОТЗЫВ =====
 app.post('/api/admin/review/approve', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ error: 'Нет токена' });
@@ -446,7 +432,6 @@ app.post('/api/admin/review/approve', async (req, res) => {
   }
 });
 
-// ===== АДМИН: УДАЛИТЬ ОТЗЫВ =====
 app.delete('/api/admin/review/:reviewId', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ error: 'Нет токена' });
@@ -464,7 +449,72 @@ app.delete('/api/admin/review/:reviewId', async (req, res) => {
   }
 });
 
-// ============ ОСНОВНАЯ ФУНКЦИЯ ============
+// ============ ПАРСИНГ КОНКУРЕНТОВ ============
+app.get('/api/competitors', async (req, res) => {
+  const { query } = req.query;
+  if (!query) return res.json({ error: 'Укажи запрос' });
+  try {
+    const searchRes = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+      params: { part: 'snippet', q: query, maxResults: 10, type: 'video', key: process.env.YOUTUBE_API_KEY }
+    });
+    const db = readDB();
+    const results = [];
+    const allComments = [];
+    
+    for (const item of searchRes.data.items) {
+      const videoId = item.id.videoId;
+      const commentsRes = await axios.get('https://www.googleapis.com/youtube/v3/commentThreads', {
+        params: { part: 'snippet', videoId, maxResults: 5, key: process.env.YOUTUBE_API_KEY }
+      });
+      const comments = commentsRes.data.items?.map(c => c.snippet.topLevelComment.snippet.textDisplay) || [];
+      allComments.push(...comments);
+      results.push({
+        title: item.snippet.title,
+        videoId: videoId,
+        channelName: item.snippet.channelTitle,
+        comments: comments.slice(0, 5)
+      });
+    }
+
+    const wordCount = {};
+    const stopWords = ['это', 'все', 'как', 'на', 'и', 'с', 'по', 'что', 'то', 'для', 'не', 'да', 'нет', 'очень', 'так', 'вот', 'там', 'тут', 'когда', 'где', 'почему', 'зачем', 'просто', 'уже', 'еще', 'можно', 'нужно', 'будет', 'было', 'стало', 'сейчас', 'тогда', 'сегодня', 'завтра', 'вчера', 'какой', 'какая', 'какое', 'какие'];
+    
+    for (const comment of allComments) {
+      const words = comment.toLowerCase().replace(/[^а-яa-z\s]/g, '').split(/\s+/);
+      for (const word of words) {
+        if (word.length > 2 && !stopWords.includes(word)) {
+          wordCount[word] = (wordCount[word] || 0) + 1;
+        }
+      }
+    }
+    
+    const trends = Object.entries(wordCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([word, count]) => ({ word, count }));
+
+    if (!db.competitorAnalysis) db.competitorAnalysis = [];
+    db.competitorAnalysis.push({
+      query,
+      timestamp: new Date().toISOString(),
+      results,
+      trends,
+      totalComments: allComments.length
+    });
+    if (db.competitorAnalysis.length > 50) db.competitorAnalysis.shift();
+    writeDB(db);
+
+    res.json({ results, trends, totalComments: allComments.length });
+
+  } catch (error) { res.json({ error: error.message }); }
+});
+
+app.get('/api/competitor-history', async (req, res) => {
+  const db = readDB();
+  res.json({ history: db.competitorAnalysis || [] });
+});
+
+// ============ ОСТАЛЬНЫЕ API ============
 async function processComments() {
   const db = readDB();
   const channels = db.channels || [];
@@ -555,7 +605,6 @@ async function processComments() {
   }
 }
 
-// ============ API ДЛЯ ИДЕЙ, ТЕСТ-ДРАЙВ, ПЛАТЕЖЕЙ ============
 app.get('/api/test-reply', async (req, res) => { await processComments(); res.json({ status: '✅ Проверка выполнена' }); });
 app.get('/api/get-ideas', async (req, res) => { const db = readDB(); res.json({ ideas: db.videoIdeas || [] }); });
 app.get('/api/get-competitors', async (req, res) => { const db = readDB(); res.json({ competitors: db.competitors || [] }); });
@@ -656,10 +705,8 @@ app.post('/api/settings', async (req, res) => {
   res.json({ success: true });
 });
 
-// ============ АВТОЗАПУСК ============
 setInterval(() => { processComments(); }, 5 * 60 * 1000);
 
-// ============ ЗАПУСК ============
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Сервер на http://localhost:${PORT}`);
