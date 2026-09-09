@@ -6,7 +6,7 @@ const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
 const jwt = require('jsonwebtoken');
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+
 const OpenAI = require('openai');
 
 const app = express();
@@ -21,45 +21,21 @@ function readDB() {
   try {
     if (!fs.existsSync(DB_FILE)) {
       fs.writeFileSync(DB_FILE, JSON.stringify({
-        users: [],
-        settings: [],
-        lastCheck: {},
-        transcripts: {},
-        weekReplies: 0,
-        videosProcessed: 0,
-        moderatedCount: 0,
-        replyLog: [],
-        pinnedComments: [],
-        videoIdeas: [],
-        competitors: [],
-        subscriptions: [],
-        payments: [],
-        processedCommentIds: [],
-        channels: [],
-        reviews: [],
-        competitorAnalysis: []
+        users: [], settings: [], lastCheck: {}, transcripts: {},
+        weekReplies: 0, videosProcessed: 0, moderatedCount: 0,
+        replyLog: [], pinnedComments: [], videoIdeas: [], competitors: [],
+        subscriptions: [], payments: [], processedCommentIds: [],
+        channels: [], reviews: [], competitorAnalysis: []
       }));
     }
     return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
   } catch {
     return {
-      users: [],
-      settings: [],
-      lastCheck: {},
-      transcripts: {},
-      weekReplies: 0,
-      videosProcessed: 0,
-      moderatedCount: 0,
-      replyLog: [],
-      pinnedComments: [],
-      videoIdeas: [],
-      competitors: [],
-      subscriptions: [],
-      payments: [],
-      processedCommentIds: [],
-      channels: [],
-      reviews: [],
-      competitorAnalysis: []
+      users: [], settings: [], lastCheck: {}, transcripts: {},
+      weekReplies: 0, videosProcessed: 0, moderatedCount: 0,
+      replyLog: [], pinnedComments: [], videoIdeas: [], competitors: [],
+      subscriptions: [], payments: [], processedCommentIds: [],
+      channels: [], reviews: [], competitorAnalysis: []
     };
   }
 }
