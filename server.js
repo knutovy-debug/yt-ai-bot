@@ -153,10 +153,6 @@ app.post('/api/register', async (req, res) => {
   const newUser = { id: Date.now().toString(), email, password: hashedPassword, created_at: new Date().toISOString() };
   db.users.push(newUser);
   db.settings.push({ user_id: newUser.id, tone: 'дружелюбный', max_length: 30, check_interval: 5, mode: 'all', manualVideoId: '' });
-  db.subscriptions.push({ user_id: newUser.id, plan: 'free', status: 'active', expires_at: null, commentsUsed: 0, month: new Date().toISOString().slice(0, 7) });
-  writeDB(db);
-  res.json({ success: true, user: { id: newUser.id, email: newUser.email } });
-});
 
 // ============ ВХОД ============
 app.post('/api/login', async (req, res) => {
