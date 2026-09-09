@@ -431,6 +431,10 @@ async function processComments() {
     const sub = db.subscriptions[0] || { plan: 'free', commentsUsed: 0 };
     const plan = PLANS[sub.plan] || PLANS.free;
     if (sub.commentsUsed >= plan.commentsPerMonth) return;
+
+    // Создаём список уже обработанных ID, если его нет
+    if (!db.processedCommentIds) db.processedCommentIds = [];
+
     const channelRes = await axios.get('https://www.googleapis.com/youtube/v3/channels', {
       params: { part: 'snippet', mine: true, access_token: youtubeTokens.access_token }
     });
@@ -467,6 +471,12 @@ async function processComments() {
         const commentId = item.id;
         const commentText = item.snippet.topLevelComment.snippet.textDisplay;
         const publishedAt = new Date(item.snippet.topLevelComment.snippet.publishedAt).getTime();
+
+        // === ПРОВЕРКА: уже отвечали на этот комментарий? ===
+        if (db.processedCommentIds.includes(commentId)) {
+          continue; // пропускаем, если уже отвечали
+        }
+
         if (publishedAt <= lastCheck) continue;
         if (isToxic(commentText)) { db.moderatedCount = (db.moderatedCount || 0) + 1; continue; }
         try {
@@ -478,7 +488,10 @@ async function processComments() {
           sub.commentsUsed = (sub.commentsUsed || 0) + 1;
           db.weekReplies = (db.weekReplies || 0) + 1;
           db.replyLog.push({ comment: commentText, reply, videoId, timestamp: new Date().toISOString() });
+          // === СОХРАНЯЕМ ID ОБРАБОТАННОГО КОММЕНТАРИЯ ===
+          db.processedCommentIds.push(commentId);
           if (db.replyLog.length > 100) db.replyLog.shift();
+          if (db.processedCommentIds.length > 500) db.processedCommentIds.shift(); // не храним больше 500 ID
         } catch (e) { console.log('Ошибка:', e.message); }
       }
       if (commentsRes.data.items.length > 0) { db.lastCheck[videoId] = Date.now(); db.videosProcessed = (db.videosProcessed || 0) + 1; }
@@ -489,7 +502,6 @@ async function processComments() {
     }
   } catch (error) { console.log('❌ Ошибка:', error.message); }
 }
-
 // ============ API ============
 app.get('/api/test-reply', async (req, res) => { await processComments(); res.json({ status: '✅ Проверка выполнена' }); });
 app.get('/api/get-ideas', async (req, res) => { const db = readDB(); res.json({ ideas: db.videoIdeas || [] }); });
