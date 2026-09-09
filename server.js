@@ -223,8 +223,28 @@ app.get('/auth/youtube/callback', async (req, res) => {
     });
     const channelName = channelResponse.data.items[0]?.snippet?.title || 'Неизвестный канал';
     res.send(`
-      <h1>✅ Канал "${channelName}" подключен!</h1>
-      <p><a href="/dashboard.html">📊 Перейти в панель управления</a></p>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta http-equiv="refresh" content="2;url=/dashboard.html">
+        <style>
+          body { font-family: sans-serif; background: #0b0b0b; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center; }
+          .container { max-width: 500px; }
+          h1 { color: #00c850; }
+          p { color: #888; }
+          .loader { width: 40px; height: 40px; border: 4px solid #1a1a1a; border-top: 4px solid #00c850; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
+          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="loader"></div>
+          <h1>✅ Канал "${channelName}" подключен!</h1>
+          <p>Перенаправление в панель управления через 2 секунды...</p>
+          <p><a href="/dashboard.html" style="color: #ff4d4d;">Перейти сейчас</a></p>
+        </div>
+      </body>
+      </html>
     `);
   } catch (error) {
     res.send('❌ Ошибка: ' + error.message);
