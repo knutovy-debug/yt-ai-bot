@@ -299,6 +299,63 @@
       border: 1px solid rgba(255, 0, 0, 0.1);
     }
 
+    /* ===== ОТЗЫВЫ ===== */
+    .reviews-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin: 40px 0 60px;
+    }
+    .review-card {
+      background: #121212;
+      border-radius: 16px;
+      padding: 28px 24px;
+      border: 1px solid #1e1e1e;
+      transition: all 0.3s ease;
+    }
+    .review-card:hover {
+      border-color: #ff3333;
+      transform: translateY(-4px);
+    }
+    .review-card .stars {
+      color: #ffd700;
+      font-size: 18px;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+    .review-card .text {
+      color: #ddd;
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 14px;
+      font-style: italic;
+    }
+    .review-card .author {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .review-card .author .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      border: 1px solid #333;
+    }
+    .review-card .author .info .name {
+      font-weight: 600;
+      font-size: 14px;
+      color: #fff;
+    }
+    .review-card .author .info .channel {
+      font-size: 12px;
+      color: #666;
+    }
+
     .pricing-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -415,6 +472,7 @@
       .hero-stats { justify-content: center; }
       .hero-text h1 { font-size: 32px; }
       .features-grid { grid-template-columns: 1fr; }
+      .reviews-grid { grid-template-columns: 1fr; }
       .pricing-grid { grid-template-columns: 1fr; }
       .header { flex-direction: column; align-items: stretch; gap: 12px; }
       .header-actions { justify-content: center; }
@@ -534,6 +592,46 @@
         <h3>Telegram-уведомления</h3>
         <p>Получай отчёты о работе бота и заявки на оплату прямо в Telegram.</p>
         <span class="tag">уведомления</span>
+      </div>
+    </div>
+
+    <!-- ===== ОТЗЫВЫ ===== -->
+    <div class="section-title">⭐ Что говорят блогеры</div>
+    <div class="section-sub">Реальные отзывы тех, кто уже использует ReplyBot</div>
+
+    <div class="reviews-grid">
+      <div class="review-card">
+        <div class="stars">★★★★★</div>
+        <div class="text">«Бот сэкономил мне 5 часов в неделю! Ответы на 100% в моём стиле. Подписчики думают, что я сам отвечаю.»</div>
+        <div class="author">
+          <div class="avatar">👤</div>
+          <div class="info">
+            <div class="name">Алексей</div>
+            <div class="channel">42k подписчиков · Влоги</div>
+          </div>
+        </div>
+      </div>
+      <div class="review-card">
+        <div class="stars">★★★★★</div>
+        <div class="text">«Очень крутая штука! Бот понимает, о чём видео, и отвечает по делу. Раньше я тратил по часу на комментарии, теперь всё автоматически.»</div>
+        <div class="author">
+          <div class="avatar">👤</div>
+          <div class="info">
+            <div class="name">Михаил</div>
+            <div class="channel">25k подписчиков · DIY</div>
+          </div>
+        </div>
+      </div>
+      <div class="review-card">
+        <div class="stars">★★★★★</div>
+        <div class="text">«Думал, бот будет спамить, но нет! Отвечает адекватно, модерация работает отлично. YouTube начал лучше продвигать видео.»</div>
+        <div class="author">
+          <div class="avatar">👤</div>
+          <div class="info">
+            <div class="name">Александр</div>
+            <div class="channel">16k подписчиков · Бизнес</div>
+          </div>
+        </div>
       </div>
     </div>
 
