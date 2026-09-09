@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ReplyBot — Вход</title>
+  <title>ReplyBot — Панель управления</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -15,25 +15,12 @@
       align-items: center;
       justify-content: center;
     }
-    .container {
-      max-width: 400px;
-      width: 100%;
-      padding: 30px 20px;
-    }
+    .container { max-width: 480px; width: 100%; padding: 20px; }
     .card {
       background: #121212;
       border-radius: 20px;
-      padding: 40px 30px;
+      padding: 30px 24px;
       border: 1px solid #1e1e1e;
-    }
-    .card h1 {
-      font-size: 28px;
-      margin-bottom: 8px;
-    }
-    .card .sub {
-      color: #666;
-      font-size: 14px;
-      margin-bottom: 30px;
     }
     .logo {
       font-size: 24px;
@@ -45,149 +32,278 @@
       display: inline-block;
       margin-bottom: 4px;
     }
-    .logo span {
-      -webkit-text-fill-color: #fff;
-      background: none;
-    }
-    input {
+    .logo span { -webkit-text-fill-color: #fff; background: none; }
+    h1 { font-size: 24px; margin: 8px 0 4px; }
+    .sub { color: #666; font-size: 14px; margin-bottom: 24px; }
+    input, select {
       width: 100%;
-      padding: 14px 16px;
+      padding: 12px 14px;
       border-radius: 10px;
       border: 1px solid #2a2a2a;
       background: #0d0d0d;
       color: #fff;
-      font-size: 15px;
-      margin-bottom: 14px;
-      transition: border-color 0.3s;
+      font-size: 14px;
+      margin-bottom: 12px;
     }
-    input:focus {
-      outline: none;
-      border-color: #ff1a1a;
-    }
+    input:focus, select:focus { outline: none; border-color: #ff1a1a; }
     .btn {
       width: 100%;
-      padding: 14px;
+      padding: 12px;
       border-radius: 10px;
       border: none;
       font-weight: 600;
-      font-size: 16px;
+      font-size: 15px;
       cursor: pointer;
       transition: all 0.25s ease;
+      margin-top: 4px;
     }
-    .btn-primary {
-      background: linear-gradient(135deg, #ff1a1a, #cc0000);
-      color: #fff;
+    .btn-primary { background: linear-gradient(135deg, #ff1a1a, #cc0000); color: #fff; }
+    .btn-primary:hover { transform: scale(1.02); }
+    .btn-outline { background: transparent; color: #aaa; border: 1px solid #2a2a2a; }
+    .btn-outline:hover { border-color: #ff4d4d; color: #fff; }
+    .btn-success { background: linear-gradient(135deg, #00c850, #009940); color: #fff; }
+    .btn-success:hover { transform: scale(1.02); }
+    .btn-gold { background: linear-gradient(135deg, #f7971e, #ffd200); color: #000; }
+    .btn-gold:hover { transform: scale(1.02); }
+    .error { color: #ff4d4d; font-size: 14px; margin-bottom: 12px; display: none; }
+    .success { color: #00c850; font-size: 14px; margin-bottom: 12px; display: none; }
+    #dashboardContent { display: none; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin: 16px 0 20px;
     }
-    .btn-primary:hover {
-      transform: scale(1.02);
-    }
-    .btn-outline {
-      background: transparent;
-      color: #aaa;
-      border: 1px solid #2a2a2a;
-      margin-top: 10px;
-    }
-    .btn-outline:hover {
-      border-color: #ff4d4d;
-      color: #fff;
-    }
-    .switch {
+    .stat-box {
+      background: #0d0d0d;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #1a1a1a;
       text-align: center;
-      color: #555;
-      font-size: 14px;
-      margin-top: 16px;
     }
-    .switch a {
-      color: #ff4d4d;
-      text-decoration: none;
-      font-weight: 600;
+    .stat-box .num { font-size: 18px; font-weight: 700; color: #ff4d4d; }
+    .stat-box .num.green { color: #00c850; }
+    .stat-box .num.yellow { color: #ffaa00; }
+    .stat-box .label { color: #555; font-size: 11px; margin-top: 2px; }
+    .mode-selector {
+      background: #0d0d0d;
+      border-radius: 12px;
+      padding: 12px 16px;
+      border: 1px solid #1a1a1a;
+      margin: 12px 0 16px;
+    }
+    .mode-selector label {
+      display: block;
+      padding: 8px 0;
       cursor: pointer;
-    }
-    .switch a:hover {
-      text-decoration: underline;
-    }
-    .error {
-      color: #ff4d4d;
       font-size: 14px;
-      margin-bottom: 12px;
+      color: #aaa;
+      transition: color 0.2s;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    .mode-selector label:last-child { border-bottom: none; }
+    .mode-selector label input { margin-right: 10px; width: auto; accent-color: #ff1a1a; }
+    .mode-selector label.active { color: #fff; }
+    .mode-hint { font-size: 12px; color: #555; margin-left: 26px; display: block; }
+    .video-id-input {
+      margin: 8px 0 12px 26px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #2a2a2a;
+      background: #0d0d0d;
+      color: #fff;
+      font-size: 13px;
+      width: calc(100% - 26px);
       display: none;
     }
-    .success {
+    .video-id-input:focus { outline: none; border-color: #ff1a1a; }
+    .video-id-input.active { display: block; }
+    .status-badge {
+      display: inline-block;
+      background: rgba(0, 200, 80, 0.15);
       color: #00c850;
-      font-size: 14px;
+      padding: 4px 14px;
+      border-radius: 40px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid rgba(0, 200, 80, 0.2);
+    }
+    .plan-card {
+      background: #0d0d0d;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid #1a1a1a;
       margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .plan-card:hover { border-color: #ff4d4d; }
+    .plan-card.selected { border-color: #ff4d4d; background: #1a0a0a; }
+    .plan-card .row { display: flex; justify-content: space-between; align-items: center; }
+    .plan-card .name { font-weight: 700; font-size: 16px; }
+    .plan-card .price { font-size: 20px; font-weight: 700; color: #ff4d4d; }
+    .plan-card .price.gold { color: #ffaa00; }
+    .plan-card .features { font-size: 12px; color: #666; margin-top: 4px; }
+    .plan-card .badge { font-size: 10px; font-weight: 700; color: #fff; background: #ff4d4d; padding: 2px 12px; border-radius: 40px; margin-left: 8px; }
+    .plan-grid { display: grid; gap: 8px; margin: 8px 0 16px; }
+    .manual-payment {
       display: none;
+      margin-top: 16px;
+      padding: 16px;
+      background: #0d0d0d;
+      border-radius: 12px;
+      border: 1px solid #1a1a1a;
     }
-    .hidden {
-      display: none !important;
+    .manual-payment .card-details {
+      background: #1a1a1a;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
     }
-    #dashboardContent {
+    .manual-payment .card-details .row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+    }
+    .admin-panel {
       display: none;
+      margin-top: 16px;
+      padding: 16px;
+      background: #1a0a0a;
+      border-radius: 12px;
+      border: 1px solid #ff4d4d44;
     }
+    .admin-panel .title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .admin-panel .title span { color: #ff4d4d; font-weight: 700; }
+    .admin-panel .title .hint { color: #555; font-size: 11px; }
   </style>
 </head>
 <body>
   <div class="container">
-
-    <!-- Форма входа -->
     <div id="authForm" class="card">
       <div class="logo">Reply<span>Bot</span></div>
       <h1 id="formTitle">Вход</h1>
       <p class="sub" id="formSub">Войди в свой аккаунт</p>
-
       <div id="errorMsg" class="error"></div>
       <div id="successMsg" class="success"></div>
-
       <input type="email" id="emailInput" placeholder="Email">
       <input type="password" id="passwordInput" placeholder="Пароль">
-
       <button class="btn btn-primary" id="submitBtn" onclick="submitForm()">Войти</button>
       <button class="btn btn-outline" onclick="toggleMode()" id="toggleBtn">Нет аккаунта? Зарегистрироваться</button>
     </div>
 
-    <!-- Дашборд (после входа) -->
     <div id="dashboardContent" class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <div class="logo">Reply<span>Bot</span></div>
-        <button class="btn btn-outline" style="width: auto; padding: 8px 18px; font-size: 13px;" onclick="logout()">Выйти</button>
+        <button class="btn btn-outline" style="width: auto; padding: 6px 16px; font-size: 13px;" onclick="logout()">Выйти</button>
       </div>
       <h2>👋 Привет, <span id="userEmail">—</span></h2>
-      <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Твой бот работает и отвечает на комментарии.</p>
+      <p style="color: #666; font-size: 14px; margin-bottom: 4px;">Твой бот работает 24/7 🧠</p>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
-        <div style="background: #0d0d0d; padding: 16px; border-radius: 12px; border: 1px solid #1a1a1a;">
-          <div style="font-size: 24px; font-weight: 700; color: #ff4d4d;" id="statComments">0</div>
-          <div style="color: #555; font-size: 12px;">комментариев</div>
-        </div>
-        <div style="background: #0d0d0d; padding: 16px; border-radius: 12px; border: 1px solid #1a1a1a;">
-          <div style="font-size: 24px; font-weight: 700; color: #00c850;" id="statStatus">✅</div>
-          <div style="color: #555; font-size: 12px;">статус</div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="num" id="statComments">0</div><div class="label">всего ответов</div></div>
+        <div class="stat-box"><div class="num green" id="statStatus">✅</div><div class="label">статус</div></div>
+        <div class="stat-box"><div class="num yellow" id="statModerated">0</div><div class="label">заблокировано</div></div>
+      </div>
+
+      <div style="margin: 4px 0 6px;"><label style="color: #888; font-size: 13px; font-weight: 600;">💳 Твой тариф</label></div>
+      <div id="planDisplay" style="background: #0d0d0d; padding: 12px 16px; border-radius: 12px; border: 1px solid #1a1a1a; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-weight: 700; font-size: 16px;" id="planName">Бесплатный</span>
+            <span style="color: #555; font-size: 12px; margin-left: 8px;" id="planLimit">50/мес</span>
+          </div>
+          <span id="planUsed" style="color: #888; font-size: 13px;">0 использовано</span>
         </div>
       </div>
 
-      <div style="margin-bottom: 16px;">
-        <label style="color: #888; font-size: 13px; display: block; margin-bottom: 4px;">Тон ответа</label>
-        <select id="botTone" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #2a2a2a; background: #0d0d0d; color: #fff;">
-          <option value="дружелюбный">😊 Дружелюбный</option>
-          <option value="дерзкий">😏 Дерзкий</option>
-          <option value="смешной">😂 Смешной</option>
-          <option value="поддерживающий">💪 Поддерживающий</option>
-          <option value="экспертный">🧠 Экспертный</option>
+      <div class="plan-grid">
+        <div class="plan-card" id="planBlogger" onclick="selectPlan('blogger')">
+          <div class="row">
+            <div><span class="name">Блогер</span> <span class="badge">🔥 популярный</span></div>
+            <span class="price">1 990 ₽</span>
+          </div>
+          <div class="features">500 ответов/мес • 1 канал • Модерация • Идеи</div>
+        </div>
+        <div class="plan-card" id="planPro" onclick="selectPlan('pro')">
+          <div class="row">
+            <div><span class="name">Профи</span> <span class="badge" style="background: #ffaa00;">⭐</span></div>
+            <span class="price gold">4 990 ₽</span>
+          </div>
+          <div class="features">Безлимит • 3 канала • Всё включено</div>
+        </div>
+      </div>
+      <button class="btn btn-gold" onclick="upgradePlan()" id="upgradeBtn">💳 Перейти на тариф</button>
+
+      <div class="manual-payment" id="manualPaymentBlock">
+        <div style="text-align: center; margin-bottom: 12px;">
+          <span style="font-size: 20px;">💳</span>
+          <h3 style="margin: 4px 0;">Оплата по реквизитам</h3>
+          <p style="color: #666; font-size: 13px;">Переведи сумму и подтверди перевод</p>
+        </div>
+        <div class="card-details">
+          <div class="row"><span style="color: #888;">Номер карты</span><span style="color: #fff; font-weight: 600;" id="cardNumber">2202 2003 1234 5678</span></div>
+          <div class="row"><span style="color: #888;">Получатель</span><span style="color: #fff; font-weight: 600;" id="cardHolder">IVAN IVANOV</span></div>
+          <div class="row"><span style="color: #888;">Сумма</span><span style="color: #ff4d4d; font-weight: 700;" id="paymentAmount">1 990 ₽</span></div>
+        </div>
+        <input type="text" id="paymentIdInput" placeholder="Введи ID платежа (из комментария к переводу)">
+        <button class="btn btn-success" onclick="confirmManualPayment()">✅ Я перевёл, активировать</button>
+        <p style="color: #555; font-size: 11px; text-align: center; margin-top: 8px;">Подписка активируется вручную владельцем</p>
+      </div>
+
+      <div class="admin-panel" id="adminPanel">
+        <div class="title"><span>🔑 Админ-панель</span><span class="hint">только для владельца</span></div>
+        <input type="email" id="adminEmailInput" placeholder="Email пользователя">
+        <select id="adminPlanSelect">
+          <option value="blogger">Блогер (1 990 ₽)</option>
+          <option value="pro">Профи (4 990 ₽)</option>
         </select>
+        <button class="btn btn-gold" onclick="activateSubscription()">✅ Активировать подписку</button>
+        <p style="color: #555; font-size: 11px; text-align: center; margin-top: 6px;">Активирует подписку без проверки перевода</p>
       </div>
 
-      <button class="btn btn-primary" onclick="saveSettings()">💾 Сохранить настройки</button>
-      <button class="btn btn-outline" onclick="runNow()" style="margin-top: 8px;">▶️ Проверить комментарии сейчас</button>
+      <div style="margin: 12px 0 6px;"><label style="color: #888; font-size: 13px; font-weight: 600;">🎯 Режим работы</label></div>
+      <div class="mode-selector" id="modeSelector">
+        <label class="active" onclick="selectMode(this)"><input type="radio" name="mode" value="all" checked> Все видео (новые комментарии)<span class="mode-hint">Бот проверяет все видео и отвечает на новые комментарии</span></label>
+        <label onclick="selectMode(this)"><input type="radio" name="mode" value="latest"> Только последнее видео<span class="mode-hint">Бот отвечает только на комментарии под последним видео</span></label>
+        <label onclick="selectMode(this)"><input type="radio" name="mode" value="manual"> Ручной выбор видео<span class="mode-hint">Укажи ID видео, под которым бот будет отвечать</span></label>
+        <input type="text" id="manualVideoId" class="video-id-input" placeholder="Введи ID видео (например: dQw4w9WgXcQ)">
+      </div>
+
+      <div style="margin: 12px 0 6px;"><label style="color: #888; font-size: 13px; font-weight: 600;">⚙️ Тон ответа</label></div>
+      <select id="botTone">
+        <option value="дружелюбный">😊 Дружелюбный</option>
+        <option value="дерзкий">😏 Дерзкий</option>
+        <option value="смешной">😂 Смешной</option>
+        <option value="поддерживающий">💪 Поддерживающий</option>
+        <option value="экспертный">🧠 Экспертный</option>
+      </select>
+
+      <button class="btn btn-success" onclick="saveSettings()">💾 Сохранить настройки</button>
+      <button class="btn btn-primary" onclick="runNow()" style="margin-top: 8px;">▶️ Проверить сейчас</button>
 
       <div style="margin-top: 16px; border-top: 1px solid #1a1a1a; padding-top: 16px;">
         <a href="/auth/youtube" class="btn btn-primary" style="text-align: center; text-decoration: none; display: block;">🔗 Подключить YouTube</a>
       </div>
-    </div>
 
+      <div style="margin-top: 10px; text-align: center;">
+        <span id="modeStatus" class="status-badge">● Режим: все видео</span>
+      </div>
+    </div>
   </div>
 
   <script>
     let isLogin = true;
+    let currentMode = 'all';
+    let currentPlan = 'free';
+    let currentUserId = null;
+
+    const ADMIN_EMAIL = 'yura82776@gmail.com';
 
     function toggleMode() {
       isLogin = !isLogin;
@@ -199,64 +315,141 @@
       document.getElementById('successMsg').style.display = 'none';
     }
 
+    function selectMode(el) {
+      document.querySelectorAll('.mode-selector label').forEach(l => l.classList.remove('active'));
+      el.classList.add('active');
+      const radio = el.querySelector('input[type="radio"]');
+      if (radio) {
+        radio.checked = true;
+        currentMode = radio.value;
+        updateModeStatus();
+        const manualInput = document.getElementById('manualVideoId');
+        if (currentMode === 'manual') { manualInput.classList.add('active'); }
+        else { manualInput.classList.remove('active'); }
+      }
+    }
+
+    function updateModeStatus() {
+      const statusEl = document.getElementById('modeStatus');
+      const names = { 'all': 'все видео', 'latest': 'только последнее', 'manual': 'ручной выбор' };
+      statusEl.textContent = '● Режим: ' + (names[currentMode] || 'все видео');
+    }
+
+    function selectPlan(plan) {
+      currentPlan = plan;
+      document.getElementById('planBlogger').style.borderColor = plan === 'blogger' ? '#ff4d4d' : '#1a1a1a';
+      document.getElementById('planPro').style.borderColor = plan === 'pro' ? '#ffaa00' : '#1a1a1a';
+      document.getElementById('upgradeBtn').textContent = '💳 Перейти на ' + (plan === 'blogger' ? 'Блогер' : 'Профи');
+    }
+
+    async function upgradePlan() {
+      if (!currentUserId) { alert('Ошибка: пользователь не идентифицирован'); return; }
+      try {
+        const res = await fetch('/api/create-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUserId, plan: currentPlan })
+        });
+        const data = await res.json();
+        document.getElementById('cardNumber').textContent = data.cardNumber || '2202 2003 1234 5678';
+        document.getElementById('cardHolder').textContent = data.cardHolder || 'IVAN IVANOV';
+        document.getElementById('paymentAmount').textContent = data.amount + ' ₽';
+        document.getElementById('paymentIdInput').value = data.paymentId;
+        document.getElementById('manualPaymentBlock').style.display = 'block';
+        document.getElementById('manualPaymentBlock').scrollIntoView({ behavior: 'smooth' });
+      } catch (e) { alert('❌ Ошибка: ' + e.message); }
+    }
+
+    async function confirmManualPayment() {
+      const paymentId = document.getElementById('paymentIdInput').value;
+      if (!paymentId) { alert('Введи ID платежа'); return; }
+      try {
+        const res = await fetch('/api/confirm-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUserId, paymentId: paymentId })
+        });
+        const data = await res.json();
+        alert(data.message || data.error);
+      } catch (e) { alert('❌ Ошибка: ' + e.message); }
+    }
+
+    async function activateSubscription() {
+      const email = document.getElementById('adminEmailInput').value;
+      const plan = document.getElementById('adminPlanSelect').value;
+      if (!email) { alert('Введи email пользователя'); return; }
+      if (!confirm(`Активировать тариф "${plan}" для ${email}?`)) return;
+      try {
+        const res = await fetch('/api/admin-activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, plan })
+        });
+        const data = await res.json();
+        alert(data.message || data.error);
+        if (data.success) { loadStats(); }
+      } catch (e) { alert('❌ Ошибка: ' + e.message); }
+    }
+
+    function checkAdmin() {
+      const userEmail = document.getElementById('userEmail').textContent;
+      if (userEmail === ADMIN_EMAIL) {
+        document.getElementById('adminPanel').style.display = 'block';
+      }
+    }
+
     async function submitForm() {
       const email = document.getElementById('emailInput').value;
       const password = document.getElementById('passwordInput').value;
       const errorEl = document.getElementById('errorMsg');
       const successEl = document.getElementById('successMsg');
-
       errorEl.style.display = 'none';
       successEl.style.display = 'none';
-
-      if (!email || !password) {
-        errorEl.textContent = 'Заполни все поля';
-        errorEl.style.display = 'block';
-        return;
-      }
-
+      if (!email || !password) { errorEl.textContent = 'Заполни все поля'; errorEl.style.display = 'block'; return; }
       const endpoint = isLogin ? '/api/login' : '/api/register';
-
       try {
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
-
         const data = await res.json();
-
-        if (!res.ok) {
-          errorEl.textContent = data.error || 'Ошибка';
-          errorEl.style.display = 'block';
-          return;
-        }
-
+        if (!res.ok) { errorEl.textContent = data.error || 'Ошибка'; errorEl.style.display = 'block'; return; }
         successEl.textContent = isLogin ? '✅ Вход выполнен!' : '✅ Регистрация успешна!';
         successEl.style.display = 'block';
-
         if (isLogin) {
-          // Показываем дашборд
           document.getElementById('authForm').style.display = 'none';
           document.getElementById('dashboardContent').style.display = 'block';
           document.getElementById('userEmail').textContent = data.user?.email || email;
-          if (data.settings?.tone) {
-            document.getElementById('botTone').value = data.settings.tone;
+          currentUserId = data.user?.id;
+          if (data.settings?.tone) document.getElementById('botTone').value = data.settings.tone;
+          if (data.settings?.mode) {
+            currentMode = data.settings.mode;
+            document.querySelectorAll('.mode-selector label').forEach(label => {
+              const radio = label.querySelector('input[type="radio"]');
+              if (radio && radio.value === currentMode) { label.classList.add('active'); radio.checked = true; }
+              else { label.classList.remove('active'); }
+            });
+            updateModeStatus();
+            if (currentMode === 'manual' && data.settings?.manualVideoId) {
+              document.getElementById('manualVideoId').classList.add('active');
+              document.getElementById('manualVideoId').value = data.settings.manualVideoId;
+            }
+          }
+          if (data.subscription) {
+            const plan = data.subscription.plan || 'free';
+            const planNames = { free: 'Бесплатный', blogger: 'Блогер', pro: 'Профи' };
+            const planLimits = { free: '50/мес', blogger: '500/мес', pro: '♾️' };
+            document.getElementById('planName').textContent = planNames[plan] || 'Бесплатный';
+            document.getElementById('planLimit').textContent = planLimits[plan] || '50/мес';
+            document.getElementById('planUsed').textContent = (data.subscription.commentsUsed || 0) + ' использовано';
           }
           loadStats();
+          checkAdmin();
         } else {
-          // После регистрации переключаем на вход
-          setTimeout(() => {
-            isLogin = true;
-            toggleMode();
-            successEl.textContent = 'Теперь войди в аккаунт';
-            successEl.style.display = 'block';
-          }, 1000);
+          setTimeout(() => { isLogin = true; toggleMode(); successEl.textContent = 'Теперь войди в аккаунт'; successEl.style.display = 'block'; }, 1000);
         }
-
-      } catch (e) {
-        errorEl.textContent = 'Ошибка соединения с сервером';
-        errorEl.style.display = 'block';
-      }
+      } catch (e) { errorEl.textContent = 'Ошибка соединения с сервером'; errorEl.style.display = 'block'; }
     }
 
     async function loadStats() {
@@ -264,22 +457,29 @@
         const res = await fetch('/api/status');
         const data = await res.json();
         document.getElementById('statComments').textContent = data.comments || 0;
-        document.getElementById('statStatus').textContent = data.youtube ? '✅ подключён' : '❌ не подключён';
+        document.getElementById('statStatus').textContent = data.youtube ? '✅' : '❌';
+        document.getElementById('statModerated').textContent = data.moderatedCount || 0;
+        if (data.plan) {
+          const planNames = { free: 'Бесплатный', blogger: 'Блогер', pro: 'Профи' };
+          const planLimits = { free: '50/мес', blogger: '500/мес', pro: '♾️' };
+          document.getElementById('planName').textContent = planNames[data.plan] || 'Бесплатный';
+          document.getElementById('planLimit').textContent = planLimits[data.plan] || '50/мес';
+          document.getElementById('planUsed').textContent = (data.commentsUsed || 0) + ' использовано';
+        }
       } catch (e) {}
     }
 
     async function saveSettings() {
       const tone = document.getElementById('botTone').value;
+      const manualVideoId = document.getElementById('manualVideoId').value;
       try {
         await fetch('/api/settings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tone })
+          body: JSON.stringify({ tone, mode: currentMode, manualVideoId })
         });
         alert('✅ Настройки сохранены!');
-      } catch (e) {
-        alert('❌ Ошибка сохранения');
-      }
+      } catch (e) { alert('❌ Ошибка сохранения'); }
     }
 
     async function runNow() {
@@ -288,9 +488,7 @@
         const data = await res.json();
         alert(data.status || data.error || '✅ Проверка выполнена');
         loadStats();
-      } catch (e) {
-        alert('❌ Ошибка');
-      }
+      } catch (e) { alert('❌ Ошибка'); }
     }
 
     function logout() {
@@ -298,10 +496,12 @@
       document.getElementById('dashboardContent').style.display = 'none';
       document.getElementById('emailInput').value = '';
       document.getElementById('passwordInput').value = '';
+      currentUserId = null;
+      document.getElementById('manualPaymentBlock').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'none';
     }
 
-    // Проверяем, есть ли сессия (пока просто показываем форму)
-    // В будущем добавим JWT
+    updateModeStatus();
   </script>
 </body>
 </html>
