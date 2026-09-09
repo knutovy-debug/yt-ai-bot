@@ -68,6 +68,7 @@
     .error { color: #ff4d4d; font-size: 14px; margin-bottom: 12px; display: none; }
     .success { color: #00c850; font-size: 14px; margin-bottom: 12px; display: none; }
     #dashboardContent { display: none; }
+    #authForm { display: block; }
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
@@ -181,10 +182,12 @@
     }
     .admin-panel .title span { color: #ff4d4d; font-weight: 700; }
     .admin-panel .title .hint { color: #555; font-size: 11px; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- ===== ФОРМА ВХОДА ===== -->
     <div id="authForm" class="card">
       <div class="logo">Reply<span>Bot</span></div>
       <h1 id="formTitle">Вход</h1>
@@ -197,6 +200,7 @@
       <button class="btn btn-outline" onclick="toggleMode()" id="toggleBtn">Нет аккаунта? Зарегистрироваться</button>
     </div>
 
+    <!-- ===== ДАШБОРД ===== -->
     <div id="dashboardContent" class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <div class="logo">Reply<span>Bot</span></div>
@@ -302,8 +306,97 @@
     let currentMode = 'all';
     let currentPlan = 'free';
     let currentUserId = null;
+    let authToken = null;
 
     const ADMIN_EMAIL = 'yura82776@gmail.com';
+
+    // ===== ТОКЕН В localStorage =====
+    function getToken() {
+      return localStorage.getItem('replybot_token');
+    }
+
+    function setToken(token) {
+      localStorage.setItem('replybot_token', token);
+    }
+
+    function removeToken() {
+      localStorage.removeItem('replybot_token');
+    }
+
+    // ===== ПРОВЕРКА АВТОРИЗАЦИИ =====
+    async function checkAuth() {
+      const token = getToken();
+      if (!token) {
+        showAuthForm();
+        return;
+      }
+      try {
+        const res = await fetch('/api/me', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) {
+          removeToken();
+          showAuthForm();
+          return;
+        }
+        const data = await res.json();
+        if (data.success) {
+          authToken = token;
+          currentUserId = data.user.id;
+          showDashboard(data);
+        } else {
+          removeToken();
+          showAuthForm();
+        }
+      } catch (e) {
+        showAuthForm();
+      }
+    }
+
+    function showAuthForm() {
+      document.getElementById('authForm').style.display = 'block';
+      document.getElementById('dashboardContent').style.display = 'none';
+    }
+
+    function showDashboard(data) {
+      document.getElementById('authForm').style.display = 'none';
+      document.getElementById('dashboardContent').style.display = 'block';
+      document.getElementById('userEmail').textContent = data.user.email;
+      if (data.settings?.tone) document.getElementById('botTone').value = data.settings.tone;
+      if (data.settings?.mode) {
+        currentMode = data.settings.mode;
+        document.querySelectorAll('.mode-selector label').forEach(label => {
+          const radio = label.querySelector('input[type="radio"]');
+          if (radio && radio.value === currentMode) {
+            label.classList.add('active');
+            radio.checked = true;
+          } else {
+            label.classList.remove('active');
+          }
+        });
+        updateModeStatus();
+        if (currentMode === 'manual' && data.settings?.manualVideoId) {
+          document.getElementById('manualVideoId').classList.add('active');
+          document.getElementById('manualVideoId').value = data.settings.manualVideoId;
+        }
+      }
+      if (data.subscription) {
+        const plan = data.subscription.plan || 'free';
+        const planNames = { free: 'Бесплатный', blogger: 'Блогер', pro: 'Профи' };
+        const planLimits = { free: '50/мес', blogger: '500/мес', pro: '♾️' };
+        document.getElementById('planName').textContent = planNames[plan] || 'Бесплатный';
+        document.getElementById('planLimit').textContent = planLimits[plan] || '50/мес';
+        document.getElementById('planUsed').textContent = (data.subscription.commentsUsed || 0) + ' использовано';
+      }
+      loadStats();
+      checkAdmin(data.user.email);
+    }
+
+    function checkAdmin(email) {
+      if (email === ADMIN_EMAIL) {
+        document.getElementById('adminPanel').style.display = 'block';
+      }
+    }
 
     function toggleMode() {
       isLogin = !isLogin;
@@ -340,6 +433,78 @@
       document.getElementById('planBlogger').style.borderColor = plan === 'blogger' ? '#ff4d4d' : '#1a1a1a';
       document.getElementById('planPro').style.borderColor = plan === 'pro' ? '#ffaa00' : '#1a1a1a';
       document.getElementById('upgradeBtn').textContent = '💳 Перейти на ' + (plan === 'blogger' ? 'Блогер' : 'Профи');
+    }
+
+    async function submitForm() {
+      const email = document.getElementById('emailInput').value;
+      const password = document.getElementById('passwordInput').value;
+      const errorEl = document.getElementById('errorMsg');
+      const successEl = document.getElementById('successMsg');
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+      if (!email || !password) { errorEl.textContent = 'Заполни все поля'; errorEl.style.display = 'block'; return; }
+      const endpoint = isLogin ? '/api/login' : '/api/register';
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) { errorEl.textContent = data.error || 'Ошибка'; errorEl.style.display = 'block'; return; }
+        if (isLogin) {
+          setToken(data.token);
+          authToken = data.token;
+          currentUserId = data.user.id;
+          showDashboard(data);
+        } else {
+          successEl.textContent = '✅ Регистрация успешна! Теперь войди в аккаунт.';
+          successEl.style.display = 'block';
+          setTimeout(() => {
+            isLogin = true;
+            toggleMode();
+          }, 1000);
+        }
+      } catch (e) { errorEl.textContent = 'Ошибка соединения с сервером'; errorEl.style.display = 'block'; }
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        document.getElementById('statComments').textContent = data.comments || 0;
+        document.getElementById('statStatus').textContent = data.youtube ? '✅' : '❌';
+        document.getElementById('statModerated').textContent = data.moderatedCount || 0;
+        if (data.plan) {
+          const planNames = { free: 'Бесплатный', blogger: 'Блогер', pro: 'Профи' };
+          const planLimits = { free: '50/мес', blogger: '500/мес', pro: '♾️' };
+          document.getElementById('planName').textContent = planNames[data.plan] || 'Бесплатный';
+          document.getElementById('planLimit').textContent = planLimits[data.plan] || '50/мес';
+          document.getElementById('planUsed').textContent = (data.commentsUsed || 0) + ' использовано';
+        }
+      } catch (e) {}
+    }
+
+    async function saveSettings() {
+      const tone = document.getElementById('botTone').value;
+      const manualVideoId = document.getElementById('manualVideoId').value;
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tone, mode: currentMode, manualVideoId })
+        });
+        alert('✅ Настройки сохранены!');
+      } catch (e) { alert('❌ Ошибка сохранения'); }
+    }
+
+    async function runNow() {
+      try {
+        const res = await fetch('/api/test-reply');
+        const data = await res.json();
+        alert(data.status || data.error || '✅ Проверка выполнена');
+        loadStats();
+      } catch (e) { alert('❌ Ошибка'); }
     }
 
     async function upgradePlan() {
@@ -391,116 +556,18 @@
       } catch (e) { alert('❌ Ошибка: ' + e.message); }
     }
 
-    function checkAdmin() {
-      const userEmail = document.getElementById('userEmail').textContent;
-      if (userEmail === ADMIN_EMAIL) {
-        document.getElementById('adminPanel').style.display = 'block';
-      }
-    }
-
-    async function submitForm() {
-      const email = document.getElementById('emailInput').value;
-      const password = document.getElementById('passwordInput').value;
-      const errorEl = document.getElementById('errorMsg');
-      const successEl = document.getElementById('successMsg');
-      errorEl.style.display = 'none';
-      successEl.style.display = 'none';
-      if (!email || !password) { errorEl.textContent = 'Заполни все поля'; errorEl.style.display = 'block'; return; }
-      const endpoint = isLogin ? '/api/login' : '/api/register';
-      try {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
-        if (!res.ok) { errorEl.textContent = data.error || 'Ошибка'; errorEl.style.display = 'block'; return; }
-        successEl.textContent = isLogin ? '✅ Вход выполнен!' : '✅ Регистрация успешна!';
-        successEl.style.display = 'block';
-        if (isLogin) {
-          document.getElementById('authForm').style.display = 'none';
-          document.getElementById('dashboardContent').style.display = 'block';
-          document.getElementById('userEmail').textContent = data.user?.email || email;
-          currentUserId = data.user?.id;
-          if (data.settings?.tone) document.getElementById('botTone').value = data.settings.tone;
-          if (data.settings?.mode) {
-            currentMode = data.settings.mode;
-            document.querySelectorAll('.mode-selector label').forEach(label => {
-              const radio = label.querySelector('input[type="radio"]');
-              if (radio && radio.value === currentMode) { label.classList.add('active'); radio.checked = true; }
-              else { label.classList.remove('active'); }
-            });
-            updateModeStatus();
-            if (currentMode === 'manual' && data.settings?.manualVideoId) {
-              document.getElementById('manualVideoId').classList.add('active');
-              document.getElementById('manualVideoId').value = data.settings.manualVideoId;
-            }
-          }
-          if (data.subscription) {
-            const plan = data.subscription.plan || 'free';
-            const planNames = { free: 'Бесплатный', blogger: 'Блогер', pro: 'Профи' };
-            const planLimits = { free: '50/мес', blogger: '500/мес', pro: '♾️' };
-            document.getElementById('planName').textContent = planNames[plan] || 'Бесплатный';
-            document.getElementById('planLimit').textContent = planLimits[plan] || '50/мес';
-            document.getElementById('planUsed').textContent = (data.subscription.commentsUsed || 0) + ' использовано';
-          }
-          loadStats();
-          checkAdmin();
-        } else {
-          setTimeout(() => { isLogin = true; toggleMode(); successEl.textContent = 'Теперь войди в аккаунт'; successEl.style.display = 'block'; }, 1000);
-        }
-      } catch (e) { errorEl.textContent = 'Ошибка соединения с сервером'; errorEl.style.display = 'block'; }
-    }
-
-    async function loadStats() {
-      try {
-        const res = await fetch('/api/status');
-        const data = await res.json();
-        document.getElementById('statComments').textContent = data.comments || 0;
-        document.getElementById('statStatus').textContent = data.youtube ? '✅' : '❌';
-        document.getElementById('statModerated').textContent = data.moderatedCount || 0;
-        if (data.plan) {
-          const planNames = { free: 'Бесплатный', blogger: 'Блогер', pro: 'Профи' };
-          const planLimits = { free: '50/мес', blogger: '500/мес', pro: '♾️' };
-          document.getElementById('planName').textContent = planNames[data.plan] || 'Бесплатный';
-          document.getElementById('planLimit').textContent = planLimits[data.plan] || '50/мес';
-          document.getElementById('planUsed').textContent = (data.commentsUsed || 0) + ' использовано';
-        }
-      } catch (e) {}
-    }
-
-    async function saveSettings() {
-      const tone = document.getElementById('botTone').value;
-      const manualVideoId = document.getElementById('manualVideoId').value;
-      try {
-        await fetch('/api/settings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tone, mode: currentMode, manualVideoId })
-        });
-        alert('✅ Настройки сохранены!');
-      } catch (e) { alert('❌ Ошибка сохранения'); }
-    }
-
-    async function runNow() {
-      try {
-        const res = await fetch('/api/test-reply');
-        const data = await res.json();
-        alert(data.status || data.error || '✅ Проверка выполнена');
-        loadStats();
-      } catch (e) { alert('❌ Ошибка'); }
-    }
-
     function logout() {
-      document.getElementById('authForm').style.display = 'block';
-      document.getElementById('dashboardContent').style.display = 'none';
-      document.getElementById('emailInput').value = '';
-      document.getElementById('passwordInput').value = '';
+      removeToken();
+      authToken = null;
       currentUserId = null;
+      document.getElementById('dashboardContent').style.display = 'none';
+      document.getElementById('authForm').style.display = 'block';
       document.getElementById('manualPaymentBlock').style.display = 'none';
       document.getElementById('adminPanel').style.display = 'none';
     }
 
+    // ===== ЗАГРУЗКА =====
+    checkAuth();
     updateModeStatus();
   </script>
 </body>
