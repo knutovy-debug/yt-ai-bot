@@ -299,12 +299,11 @@
       border: 1px solid rgba(255, 0, 0, 0.1);
     }
 
-    /* ===== ОТЗЫВЫ ===== */
     .reviews-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 24px;
-      margin: 40px 0 60px;
+      margin: 40px 0 30px;
     }
     .review-card {
       background: #121212;
@@ -351,10 +350,69 @@
       font-size: 14px;
       color: #fff;
     }
-    .review-card .author .info .channel {
-      font-size: 12px;
-      color: #666;
+    .review-card .author .info .date {
+      font-size: 11px;
+      color: #555;
     }
+    .review-form {
+      background: #121212;
+      border-radius: 16px;
+      padding: 30px;
+      border: 1px solid #1e1e1e;
+      margin-bottom: 40px;
+    }
+    .review-form h3 {
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+    .review-form p {
+      color: #888;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .review-form .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .review-form input, .review-form textarea {
+      flex: 1;
+      min-width: 200px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #2a2a2a;
+      background: #0d0d0d;
+      color: #fff;
+      font-size: 14px;
+    }
+    .review-form input:focus, .review-form textarea:focus {
+      outline: none;
+      border-color: #ff1a1a;
+    }
+    .review-form textarea {
+      width: 100%;
+      min-height: 80px;
+      resize: vertical;
+    }
+    .review-form .stars-select {
+      display: flex;
+      gap: 8px;
+      margin: 8px 0 12px;
+      font-size: 28px;
+      cursor: pointer;
+    }
+    .review-form .stars-select span {
+      cursor: pointer;
+      transition: transform 0.2s;
+      color: #444;
+    }
+    .review-form .stars-select span:hover {
+      transform: scale(1.2);
+    }
+    .review-form .stars-select span.active {
+      color: #ffd700;
+    }
+    .review-form .btn { width: auto; padding: 12px 32px; }
 
     .pricing-grid {
       display: grid;
@@ -495,6 +553,7 @@
       .robot-core { width: 10px; height: 10px; }
       .robot-mouth { width: 14px; bottom: 5px; }
       .robot-label { font-size: 9px; padding: 2px 8px; margin-top: 4px; }
+      .review-form .row { flex-direction: column; }
     }
   </style>
 </head>
@@ -588,18 +647,17 @@
         <span class="tag">статистика</span>
       </div>
       <div class="feature-card">
-        <span class="icon">💬</span>
-        <h3>Telegram-уведомления</h3>
-        <p>Получай отчёты о работе бота и заявки на оплату прямо в Telegram.</p>
-        <span class="tag">уведомления</span>
+        <span class="icon">🚀</span>
+        <h3>Приоритетная поддержка</h3>
+        <p>Быстрые ответы на вопросы и помощь в настройке бота.</p>
+        <span class="tag">поддержка</span>
       </div>
     </div>
 
-    <!-- ===== ОТЗЫВЫ ===== -->
     <div class="section-title">⭐ Что говорят блогеры</div>
     <div class="section-sub">Реальные отзывы тех, кто уже использует ReplyBot</div>
 
-    <div class="reviews-grid">
+    <div class="reviews-grid" id="reviewsContainer">
       <div class="review-card">
         <div class="stars">★★★★★</div>
         <div class="text">«Бот сэкономил мне 5 часов в неделю! Ответы на 100% в моём стиле. Подписчики думают, что я сам отвечаю.»</div>
@@ -607,7 +665,7 @@
           <div class="avatar">👤</div>
           <div class="info">
             <div class="name">Алексей</div>
-            <div class="channel">42k подписчиков · Влоги</div>
+            <div class="date">42k подписчиков</div>
           </div>
         </div>
       </div>
@@ -618,7 +676,7 @@
           <div class="avatar">👤</div>
           <div class="info">
             <div class="name">Михаил</div>
-            <div class="channel">25k подписчиков · DIY</div>
+            <div class="date">25k подписчиков</div>
           </div>
         </div>
       </div>
@@ -629,10 +687,28 @@
           <div class="avatar">👤</div>
           <div class="info">
             <div class="name">Александр</div>
-            <div class="channel">16k подписчиков · Бизнес</div>
+            <div class="date">16k подписчиков</div>
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="review-form">
+      <h3>✍️ Оставь свой отзыв</h3>
+      <p>Поделись впечатлением о боте — это поможет другим блогерам</p>
+      <div class="row">
+        <input type="text" id="reviewName" placeholder="Твоё имя (или название канала)" style="flex: 1;">
+      </div>
+      <div class="stars-select" id="starsSelect">
+        <span data-value="1">☆</span>
+        <span data-value="2">☆</span>
+        <span data-value="3">☆</span>
+        <span data-value="4">☆</span>
+        <span data-value="5">☆</span>
+      </div>
+      <textarea id="reviewText" placeholder="Напиши, что тебе понравилось..."></textarea>
+      <button class="btn btn-primary" onclick="submitReview()">📤 Отправить отзыв</button>
+      <div id="reviewMessage" style="margin-top: 12px; color: #00c850; display: none;"></div>
     </div>
 
     <div class="section-title">💳 Выбери свой тариф</div>
@@ -674,7 +750,6 @@
           <li>✅ До 3 каналов</li>
           <li>✅ Всё из предыдущих тарифов</li>
           <li>✅ Парсинг конкурентов</li>
-          <li>✅ Telegram-уведомления</li>
           <li>✅ Приоритетная поддержка</li>
         </ul>
         <a href="/dashboard.html" class="btn btn-success">Выбрать</a>
@@ -699,6 +774,100 @@
   </div>
 
   <script>
+    let selectedRating = 5;
+
+    document.querySelectorAll('#starsSelect span').forEach(el => {
+      el.addEventListener('click', function() {
+        selectedRating = parseInt(this.dataset.value);
+        document.querySelectorAll('#starsSelect span').forEach(s => {
+          if (parseInt(s.dataset.value) <= selectedRating) {
+            s.classList.add('active');
+            s.textContent = '★';
+          } else {
+            s.classList.remove('active');
+            s.textContent = '☆';
+          }
+        });
+      });
+      el.addEventListener('mouseenter', function() {
+        const val = parseInt(this.dataset.value);
+        document.querySelectorAll('#starsSelect span').forEach(s => {
+          if (parseInt(s.dataset.value) <= val) {
+            s.style.color = '#ffd700';
+          } else {
+            s.style.color = '#444';
+          }
+        });
+      });
+      el.addEventListener('mouseleave', function() {
+        document.querySelectorAll('#starsSelect span').forEach(s => {
+          s.style.color = '';
+        });
+      });
+    });
+
+    document.querySelectorAll('#starsSelect span').forEach(s => {
+      if (parseInt(s.dataset.value) <= 5) {
+        s.classList.add('active');
+        s.textContent = '★';
+      }
+    });
+
+    async function loadReviews() {
+      try {
+        const res = await fetch('/api/reviews');
+        const data = await res.json();
+        const container = document.getElementById('reviewsContainer');
+        if (!data.reviews || data.reviews.length === 0) {
+          container.innerHTML = '<p style="text-align: center; color: #555; grid-column: 1/4;">Пока нет отзывов. Будь первым!</p>';
+          return;
+        }
+        container.innerHTML = data.reviews.map(r => `
+          <div class="review-card">
+            <div class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+            <div class="text">«${r.text}»</div>
+            <div class="author">
+              <div class="avatar">👤</div>
+              <div class="info">
+                <div class="name">${r.name}</div>
+                <div class="date">${new Date(r.created_at).toLocaleDateString('ru-RU')}</div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.log('Ошибка загрузки отзывов:', e);
+      }
+    }
+
+    async function submitReview() {
+      const name = document.getElementById('reviewName').value.trim();
+      const text = document.getElementById('reviewText').value.trim();
+      const msg = document.getElementById('reviewMessage');
+
+      if (!name) { alert('Введи своё имя или название канала'); return; }
+      if (!text || text.length < 10) { alert('Напиши отзыв (минимум 10 символов)'); return; }
+
+      try {
+        const res = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, text, rating: selectedRating })
+        });
+        const data = await res.json();
+        if (data.success) {
+          msg.textContent = '✅ Спасибо за отзыв! Он появится после проверки.';
+          msg.style.display = 'block';
+          document.getElementById('reviewName').value = '';
+          document.getElementById('reviewText').value = '';
+        } else {
+          alert('❌ Ошибка: ' + (data.error || 'попробуй позже'));
+        }
+      } catch (e) {
+        alert('❌ Ошибка соединения');
+      }
+    }
+
     function extractVideoId(url) {
       const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
       if (shortMatch) return shortMatch[1];
@@ -744,6 +913,8 @@
         result.innerHTML = '❌ Ошибка сервера';
       }
     }
+
+    loadReviews();
   </script>
 </body>
 </html>
