@@ -216,11 +216,24 @@
       color: #ddd;
     }
     #ideasList div:last-child { border-bottom: none; }
+    #adminReviewsList {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    #adminReviewsList::-webkit-scrollbar {
+      width: 4px;
+    }
+    #adminReviewsList::-webkit-scrollbar-track {
+      background: #1a1a1a;
+    }
+    #adminReviewsList::-webkit-scrollbar-thumb {
+      background: #ff4d4d;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- ===== ФОРМА ВХОДА ===== -->
     <div id="authForm" class="card">
       <div class="logo">Reply<span>Bot</span></div>
       <h1 id="formTitle">Вход</h1>
@@ -233,7 +246,6 @@
       <button class="btn btn-outline" onclick="toggleMode()" id="toggleBtn">Нет аккаунта? Зарегистрироваться</button>
     </div>
 
-    <!-- ===== ДАШБОРД ===== -->
     <div id="dashboardContent" class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <div class="logo">Reply<span>Bot</span></div>
@@ -248,7 +260,6 @@
         <div class="stat-box"><div class="num yellow" id="statModerated">0</div><div class="label">заблокировано</div></div>
       </div>
 
-      <!-- ===== МОИ КАНАЛЫ ===== -->
       <div style="margin: 12px 0 6px;">
         <label style="color: #888; font-size: 13px; font-weight: 600;">📺 Мои каналы</label>
         <span id="channelLimit" style="color: #555; font-size: 12px; margin-left: 8px;"></span>
@@ -258,7 +269,6 @@
       </div>
       <button class="btn btn-outline" onclick="addChannel()" id="addChannelBtn" style="padding: 8px; font-size: 13px;">➕ Добавить канал</button>
 
-      <!-- ===== ТАРИФ ===== -->
       <div style="margin: 16px 0 6px;"><label style="color: #888; font-size: 13px; font-weight: 600;">💳 Твой тариф</label></div>
       <div id="planDisplay" style="background: #0d0d0d; padding: 12px 16px; border-radius: 12px; border: 1px solid #1a1a1a; margin-bottom: 12px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -313,18 +323,25 @@
         </select>
         <button class="btn btn-gold" onclick="activateSubscription()">✅ Активировать подписку</button>
         <p style="color: #555; font-size: 11px; text-align: center; margin-top: 6px;">Активирует подписку без проверки перевода</p>
+
+        <!-- ===== УПРАВЛЕНИЕ ОТЗЫВАМИ ===== -->
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2a2a;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="color: #ffaa00; font-weight: 700;">💬 Управление отзывами</span>
+            <button class="btn btn-outline" style="width: auto; padding: 4px 12px; font-size: 12px;" onclick="loadAdminReviews()">Обновить</button>
+          </div>
+          <div id="adminReviewsList">
+            <p style="color: #555; font-size: 13px;">Загрузка...</p>
+          </div>
+        </div>
       </div>
 
-      <!-- ===== ИДЕИ ДЛЯ ВИДЕО ===== -->
-      <div style="margin: 12px 0 6px;">
-        <label style="color: #888; font-size: 13px; font-weight: 600;">💡 Идеи для видео</label>
-      </div>
+      <div style="margin: 12px 0 6px;"><label style="color: #888; font-size: 13px; font-weight: 600;">💡 Идеи для видео</label></div>
       <button class="btn btn-primary" onclick="generateIdeas()" id="genIdeasBtn" style="padding: 10px; font-size: 14px;">🧠 Сгенерировать идеи</button>
       <div id="ideasContainer" style="margin-top: 10px; display: none;">
         <div id="ideasList"></div>
       </div>
 
-      <!-- ===== РЕЖИМЫ ===== -->
       <div style="margin: 12px 0 6px;"><label style="color: #888; font-size: 13px; font-weight: 600;">🎯 Режим работы</label></div>
       <div class="mode-selector" id="modeSelector">
         <label class="active" onclick="selectMode(this)"><input type="radio" name="mode" value="all" checked> Все видео (новые комментарии)<span class="mode-hint">Бот проверяет все видео и отвечает на новые комментарии</span></label>
@@ -333,7 +350,6 @@
         <input type="text" id="manualVideoId" class="video-id-input" placeholder="Введи ID видео (например: dQw4w9WgXcQ)">
       </div>
 
-      <!-- ===== ТОН ===== -->
       <div style="margin: 12px 0 6px;"><label style="color: #888; font-size: 13px; font-weight: 600;">⚙️ Тон ответа</label></div>
       <select id="botTone">
         <option value="дружелюбный">😊 Дружелюбный</option>
@@ -429,6 +445,7 @@
       loadStats();
       checkAdmin(data.user.email);
       loadChannels();
+      loadAdminReviews();
     }
 
     function checkAdmin(email) {
@@ -677,6 +694,88 @@
       } catch (e) { alert('❌ Ошибка: ' + e.message); }
     }
 
+    // ===== УПРАВЛЕНИЕ ОТЗЫВАМИ (АДМИН) =====
+    async function loadAdminReviews() {
+      const token = getToken();
+      if (!token) return;
+      const container = document.getElementById('adminReviewsList');
+      container.innerHTML = '⏳ Загрузка...';
+      try {
+        const res = await fetch('/api/admin/reviews', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (!data.reviews || data.reviews.length === 0) {
+          container.innerHTML = '<p style="color: #555; font-size: 13px;">Нет отзывов</p>';
+          return;
+        }
+        container.innerHTML = data.reviews.map(r => `
+          <div style="background: #0d0d0d; padding: 10px 12px; border-radius: 8px; border: 1px solid ${r.approved ? '#1a3a1a' : '#3a1a1a'}; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span style="font-weight: 600; color: #fff;">${r.name}</span>
+                <span style="color: #ffd700; font-size: 13px; margin-left: 6px;">${'★'.repeat(r.rating)}</span>
+                <span style="color: #555; font-size: 12px; margin-left: 8px;">${new Date(r.created_at).toLocaleDateString('ru-RU')}</span>
+                <span style="color: ${r.approved ? '#00c850' : '#ffaa00'}; font-size: 11px; margin-left: 8px;">${r.approved ? '✅ Одобрен' : '⏳ На модерации'}</span>
+              </div>
+              <div>
+                ${!r.approved ? `<button onclick="approveReview('${r.id}')" style="background: #00c850; color: #000; border: none; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; margin-right: 4px;">✅</button>` : ''}
+                <button onclick="deleteReview('${r.id}')" style="background: #ff4d4d; color: #fff; border: none; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px;">✕</button>
+              </div>
+            </div>
+            <div style="color: #aaa; font-size: 13px; margin-top: 4px; font-style: italic;">«${r.text}»</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = '❌ Ошибка загрузки';
+      }
+    }
+
+    async function approveReview(reviewId) {
+      const token = getToken();
+      if (!token) return;
+      try {
+        const res = await fetch('/api/admin/review/approve', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ reviewId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Отзыв одобрен!');
+          loadAdminReviews();
+        } else {
+          alert('❌ Ошибка');
+        }
+      } catch (e) {
+        alert('❌ Ошибка');
+      }
+    }
+
+    async function deleteReview(reviewId) {
+      if (!confirm('Удалить этот отзыв?')) return;
+      const token = getToken();
+      if (!token) return;
+      try {
+        const res = await fetch(`/api/admin/review/${reviewId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Отзыв удалён');
+          loadAdminReviews();
+        } else {
+          alert('❌ Ошибка');
+        }
+      } catch (e) {
+        alert('❌ Ошибка');
+      }
+    }
+
     function logout() {
       removeToken();
       authToken = null;
@@ -687,7 +786,6 @@
       document.getElementById('adminPanel').style.display = 'none';
     }
 
-    // ===== ЗАГРУЗКА =====
     checkAuth();
     updateModeStatus();
   </script>
