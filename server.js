@@ -6,7 +6,7 @@ const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
 const jwt = require('jsonwebtoken');
-
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const OpenAI = require('openai');
 
 const app = express();
