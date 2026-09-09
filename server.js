@@ -21,43 +21,21 @@ function readDB() {
   try {
     if (!fs.existsSync(DB_FILE)) {
       fs.writeFileSync(DB_FILE, JSON.stringify({
-        users: [],
-        settings: [],
-        lastCheck: {},
-        transcripts: {},
-        weekReplies: 0,
-        videosProcessed: 0,
-        moderatedCount: 0,
-        replyLog: [],
-        pinnedComments: [],
-        videoIdeas: [],
-        competitors: [],
-        subscriptions: [],
-        payments: [],
-        processedCommentIds: [],
-        channels: [],
-        reviews: []
+        users: [], settings: [], lastCheck: {}, transcripts: {},
+        weekReplies: 0, videosProcessed: 0, moderatedCount: 0,
+        replyLog: [], pinnedComments: [], videoIdeas: [], competitors: [],
+        subscriptions: [], payments: [], processedCommentIds: [],
+        channels: [], reviews: []
       }));
     }
     return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
   } catch {
     return {
-      users: [],
-      settings: [],
-      lastCheck: {},
-      transcripts: {},
-      weekReplies: 0,
-      videosProcessed: 0,
-      moderatedCount: 0,
-      replyLog: [],
-      pinnedComments: [],
-      videoIdeas: [],
-      competitors: [],
-      subscriptions: [],
-      payments: [],
-      processedCommentIds: [],
-      channels: [],
-      reviews: []
+      users: [], settings: [], lastCheck: {}, transcripts: {},
+      weekReplies: 0, videosProcessed: 0, moderatedCount: 0,
+      replyLog: [], pinnedComments: [], videoIdeas: [], competitors: [],
+      subscriptions: [], payments: [], processedCommentIds: [],
+      channels: [], reviews: []
     };
   }
 }
@@ -447,7 +425,6 @@ app.delete('/api/admin/review/:reviewId', async (req, res) => {
   }
 });
 
-// ============ ОСТАЛЬНЫЕ API ============
 async function processComments() {
   const db = readDB();
   const channels = db.channels || [];
@@ -541,7 +518,6 @@ async function processComments() {
 app.get('/api/test-reply', async (req, res) => { await processComments(); res.json({ status: '✅ Проверка выполнена' }); });
 app.get('/api/get-ideas', async (req, res) => { const db = readDB(); res.json({ ideas: db.videoIdeas || [] }); });
 app.get('/api/get-competitors', async (req, res) => { const db = readDB(); res.json({ competitors: db.competitors || [] }); });
-
 app.get('/api/video-ideas', async (req, res) => {
   const db = readDB();
   const allComments = db.replyLog || [];
@@ -561,7 +537,6 @@ app.get('/api/video-ideas', async (req, res) => {
     res.json({ ideas });
   } catch (error) { res.json({ error: error.message }); }
 });
-
 app.get('/api/test-drive', async (req, res) => {
   const { videoId } = req.query;
   if (!videoId) return res.json({ error: 'Укажи videoId' });
@@ -575,7 +550,6 @@ app.get('/api/test-drive', async (req, res) => {
     res.json({ reply });
   } catch (error) { res.json({ error: error.message }); }
 });
-
 app.post('/api/create-payment', async (req, res) => {
   const { userId, plan } = req.body;
   if (!userId || !plan) return res.status(400).json({ error: 'Не указан пользователь или тариф' });
@@ -590,7 +564,6 @@ app.post('/api/create-payment', async (req, res) => {
   writeDB(db);
   res.json({ paymentId, amount: planData.price, cardNumber: process.env.CARD_NUMBER || '2202 2003 1234 5678', cardHolder: process.env.CARD_HOLDER || 'IVAN IVANOV' });
 });
-
 app.post('/api/confirm-payment', async (req, res) => {
   const { userId, paymentId } = req.body;
   if (!userId || !paymentId) return res.status(400).json({ error: 'Укажи userId и paymentId' });
@@ -604,7 +577,6 @@ app.post('/api/confirm-payment', async (req, res) => {
   await sendTelegram(`💳 НОВАЯ ЗАЯВКА НА ОПЛАТУ!\n\nПользователь: ${payment.email}\nТариф: ${PLANS[payment.plan].name}\nСумма: ${payment.amount} ₽\nID: ${paymentId}`);
   res.json({ success: true, message: '✅ Заявка отправлена! Активируем вручную.', requiresManual: true });
 });
-
 app.post('/api/admin-activate', async (req, res) => {
   const { email, plan } = req.body;
   if (!email || !plan) return res.status(400).json({ error: 'Укажи email и план' });
@@ -625,7 +597,6 @@ app.post('/api/admin-activate', async (req, res) => {
   await sendTelegram(`✅ Админ активировал тариф "${PLANS[plan].name}" для ${email}`);
   res.json({ success: true, message: `✅ Подписка "${PLANS[plan].name}" активирована для ${email}` });
 });
-
 app.post('/api/settings', async (req, res) => {
   const { tone, mode, manualVideoId } = req.body;
   const db = readDB();
