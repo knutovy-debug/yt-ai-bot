@@ -191,7 +191,7 @@ app.get('/api/status', (req, res) => {
   const db = readDB();
   const sub = db.subscriptions[0] || { plan: 'free', commentsUsed: 0 };
   const plan = PLANS[sub.plan] || PLANS.free;
-  const channelCount = db.channels.filter(c => c.user_id === db.users[0]?.id).length || 0;
+  const channels = (db.channels || []).filter(c => c.user_id === user.id);
   res.json({
     status: 'ok',
     youtube: channelCount > 0 ? 'подключён' : 'не подключён',
