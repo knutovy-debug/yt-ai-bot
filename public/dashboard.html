@@ -201,6 +201,21 @@
       font-size: 16px;
     }
     .hidden { display: none !important; }
+    #ideasList {
+      background: #0d0d0d;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid #1a1a1a;
+      font-size: 14px;
+      color: #aaa;
+      line-height: 1.6;
+    }
+    #ideasList div {
+      padding: 6px 0;
+      border-bottom: 1px solid #1a1a1a;
+      color: #ddd;
+    }
+    #ideasList div:last-child { border-bottom: none; }
   </style>
 </head>
 <body>
@@ -300,6 +315,16 @@
         <p style="color: #555; font-size: 11px; text-align: center; margin-top: 6px;">Активирует подписку без проверки перевода</p>
       </div>
 
+      <!-- ===== ИДЕИ ДЛЯ ВИДЕО ===== -->
+      <div style="margin: 12px 0 6px;">
+        <label style="color: #888; font-size: 13px; font-weight: 600;">💡 Идеи для видео</label>
+      </div>
+      <button class="btn btn-primary" onclick="generateIdeas()" id="genIdeasBtn" style="padding: 10px; font-size: 14px;">🧠 Сгенерировать идеи</button>
+      <div id="ideasContainer" style="margin-top: 10px; display: none;">
+        <div id="ideasList"></div>
+      </div>
+
+      <!-- ===== РЕЖИМЫ ===== -->
       <div style="margin: 12px 0 6px;"><label style="color: #888; font-size: 13px; font-weight: 600;">🎯 Режим работы</label></div>
       <div class="mode-selector" id="modeSelector">
         <label class="active" onclick="selectMode(this)"><input type="radio" name="mode" value="all" checked> Все видео (новые комментарии)<span class="mode-hint">Бот проверяет все видео и отвечает на новые комментарии</span></label>
@@ -308,6 +333,7 @@
         <input type="text" id="manualVideoId" class="video-id-input" placeholder="Введи ID видео (например: dQw4w9WgXcQ)">
       </div>
 
+      <!-- ===== ТОН ===== -->
       <div style="margin: 12px 0 6px;"><label style="color: #888; font-size: 13px; font-weight: 600;">⚙️ Тон ответа</label></div>
       <select id="botTone">
         <option value="дружелюбный">😊 Дружелюбный</option>
@@ -398,7 +424,6 @@
         document.getElementById('planLimit').textContent = planLimits[plan] || '50/мес';
         document.getElementById('planUsed').textContent = (data.subscription.commentsUsed || 0) + ' использовано';
       }
-      // Обновляем лимит каналов
       const maxChannels = data.subscription?.plan === 'pro' ? 3 : 1;
       document.getElementById('channelLimit').textContent = `(макс. ${maxChannels})`;
       loadStats();
@@ -565,6 +590,42 @@
         alert(data.status || data.error || '✅ Проверка выполнена');
         loadStats();
       } catch (e) { alert('❌ Ошибка'); }
+    }
+
+    async function generateIdeas() {
+      const btn = document.getElementById('genIdeasBtn');
+      const container = document.getElementById('ideasContainer');
+      const list = document.getElementById('ideasList');
+
+      btn.textContent = '⏳ Генерация...';
+      btn.disabled = true;
+      container.style.display = 'block';
+      list.innerHTML = 'Анализирую комментарии...';
+
+      try {
+        const res = await fetch('/api/video-ideas');
+        const data = await res.json();
+
+        if (data.error) {
+          list.innerHTML = '❌ ' + data.error;
+          return;
+        }
+
+        if (!data.ideas || data.ideas.length === 0) {
+          list.innerHTML = '❌ Недостаточно комментариев для генерации идей. Подожди, пока накопится больше обсуждений.';
+          return;
+        }
+
+        list.innerHTML = data.ideas.map((idea, i) => 
+          `<div>${i+1}. ${idea}</div>`
+        ).join('');
+
+      } catch (e) {
+        list.innerHTML = '❌ Ошибка: ' + e.message;
+      }
+
+      btn.textContent = '🧠 Сгенерировать идеи';
+      btn.disabled = false;
     }
 
     async function upgradePlan() {
